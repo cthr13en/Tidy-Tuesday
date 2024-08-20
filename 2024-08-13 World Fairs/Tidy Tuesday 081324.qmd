@@ -22,6 +22,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 suppressMessages(library(tidytuesdayR))
 suppressMessages(library(skimr))
 suppressMessages(library(tidyverse))
+suppressMessages(library(dplyr))
 
 
 # Load the current week's dataset
@@ -51,59 +52,111 @@ Most of the cost fetched from https://jdpecon.com/expo/expolist.html
 
 # Clean the data
 ```{r}
+
+#selected_data <- worlds_fairs %>% dplyr::select("country", "start_year", "city", "cost")
+#selected_data
+
 # add missing values
-worlds_fairs[70, "cost"] <- 7000
-worlds_fairs[69, "cost"] <- 2100 
-worlds_fairs[68, "cost"] <- 14430 # Using the 2015 average exchange rate, €13 billion in 2015 would be approximately $14.43 billion USD
-worlds_fairs[67, "cost"] <- 2000
-worlds_fairs[65, "cost"] <- 1070
-worlds_fairs[64, "cost"] <- 3500
-worlds_fairs[62, "cost"] <- 2000
-worlds_fairs[61, "cost"] <- 3500 # South Korea 93
-worlds_fairs[60, "cost"] <- 569 # Expo Colombo '92 $487.5 to $650 million according to the New York Times - We will use median 568.75 rounded
-worlds_fairs[59, "cost"] <- 9300 # Expo Spain '92
-worlds_fairs[54, "cost"] <- 764 # Expo Expo 85 (Tsukuba, Japan)
-worlds_fairs[50, "cost"] <- 304 # Expo Japan 75
-worlds_fairs[32, "cost"] <- 4 # Expo Port-au-Prince 1949
-worlds_fairs[12, "cost"] <- 1 # Brussels International Exposition 1897
+# https://jdpecon.com/expo/expolist.html
+worlds_fairs[70, "cost"] <- 14600 # Dubai 2022
+worlds_fairs[69, "cost"] <- 3000 # Kazakhstan 2017
+worlds_fairs[68, "cost"] <- 1640 # Italy 2015
+worlds_fairs[65, "cost"] <- 1070 # Spain 2008
+worlds_fairs[64, "cost"] <- 3130 # Japan 2005
+worlds_fairs[62, "cost"] <- 2952 # Portugal 1998 | Estimated $1753 to $2398 million - We will use median 2952 rounded
+worlds_fairs[61, "cost"] <- 2800 # South Korea 1993
+worlds_fairs[60, "cost"] <- 568.75 # Italy 1992 $487.5 to $650 million according to the New York Times - We will use median 568.75 rounded
+worlds_fairs[59, "cost"] <- 2332 # Spain 1992
+worlds_fairs[54, "cost"] <- 763.7 # Japan 1985
+worlds_fairs[50, "cost"] <- 304 # Japan 1975
+worlds_fairs[12, "cost"] <- 1.14 # Belgium 1897
 
 
 # Corrections
-worlds_fairs[1, "cost"] <- 1.65 # 1851 London
-worlds_fairs[2, "cost"] <- 6 # 1855 France
-worlds_fairs[10, "cost"] <- 8 # France 1889 41.5 million French francs would be approximately 8.01 million USD
-worlds_fairs[6, "cost"] <- 9 # 1876 Philadelphia
-worlds_fairs[21, "cost"] <- 25 # fix
-worlds_fairs[13, "cost"] <- 18.75 # 1900 Paris
-worlds_fairs[23, "cost"] <- 22.4 # 1935 Brussels
-worlds_fairs[25, "cost"] <- 57.25 # 1937 Paris
-worlds_fairs[41, "cost"] <- 43.4 # 1958 Brussels
-worlds_fairs[45, "cost"] <- 384.7 # 1967 Canada 415.920 CAD million would be approximately 384.7 million USD
-worlds_fairs[47, "cost"] <- 3420 # Expo '70 According to the New York Times, the total spent on expo related projects plus expo was $3 billion spent with $420 million spent on preparation of site and construction of pavilions
-worlds_fairs[56, "cost"] <- 590 # Expo '86 Canada
-worlds_fairs[57, "cost"] <- 743 # Expo '88 Brisbane
-worlds_fairs[63, "cost"] <- 2238 # Expo '2000 Hanover
-worlds_fairs[66, "cost"] <- 8800 # Expo '2010 Shanghai
-worlds_fairs[26, "visitors"] <- 15 # 1938 Helsinki London
-worlds_fairs[26, "area"] <- 15.2 # 1938 Helsinki London
-worlds_fairs[32, "visitors"] <- 0.07 # Expo Port-au-Prince 1949
-worlds_fairs[35, "visitors"] <- 0.6 # Expo 1953 Jerusalem
-worlds_fairs[37, "visitors"] <- 0.12 # Expo 1955 Turin
-worlds_fairs[38, "area"] <- 4.45 # Expo 1955 Turin
-worlds_fairs[14, "cost"] <- 26.5 # St Louis 1904
-worlds_fairs[15, "cost"] <- 2.9 # Belgium 1905
-worlds_fairs[16, "cost"] <- 2.6 # Milan 1906
-worlds_fairs[17, "cost"] <- 3.5 
-worlds_fairs[19, "cost"] <- 3.3 
-worlds_fairs[20, "cost"] <- 22.2
-worlds_fairs[22, "cost"] <- 31
-worlds_fairs[27, "cost"] <- 160
-worlds_fairs[43, "cost"] <- 47
-worlds_fairs[49, "cost"] <- 78.4
-worlds_fairs[5, "cost"] <- 12 # Vienna 1873
+# https://jdpecon.com/expo/expolist.html
+worlds_fairs[1, "cost"] <- 1.67 # London 1851 
+worlds_fairs[2, "cost"] <- 5.7 # France 1855 
+worlds_fairs[3, "cost"] <- 2.3 # London 1862 
 worlds_fairs[4, "cost"] <- 4.5 # Paris 1867
-worlds_fairs[8, "cost"] <- 1.6 # Melbourne 1880
+worlds_fairs[5, "cost"] <- 12 # Vienna 1873
+worlds_fairs[6, "cost"] <- 9 # Philadelphia 1876 
+# worlds_fairs[7, "cost"] <- 11 # France 1878	
+worlds_fairs[8, "cost"] <- 1.56 # Melbourne 1880
 worlds_fairs[9, "cost"] <- 1.7 # Spain 1881
+worlds_fairs[10, "cost"] <- 8.01 # France 1889 41.5 million French francs would be approximately 8.01 million USD
+worlds_fairs[11, "cost"] <- 27.3 # Chicago 1893
+worlds_fairs[12, "cost"] <- 1.14 # Belgium	1897
+worlds_fairs[13, "cost"] <- 18.75 # Paris 1900 
+worlds_fairs[14, "cost"] <- 26.5 # St Louis 1904
+worlds_fairs[15, "cost"] <- 2.89 # Belgium 1905
+worlds_fairs[16, "cost"] <- 2.6 # Milan 1906
+worlds_fairs[17, "cost"] <- 3.55 # Belgium	1910
+# worlds_fairs[18, "cost"] <- NA # Italy	1911
+worlds_fairs[19, "cost"] <- 3.3 # Belgium	1913
+worlds_fairs[20, "cost"] <- 24.7 # San Francisco	1915
+# worlds_fairs[21, "cost"] <- 25 # Spain	1929
+worlds_fairs[22, "cost"] <- 31 # Chicago 1933
+worlds_fairs[23, "cost"] <- 22.4 # Belgium 1935 
+# worlds_fairs[24, "cost"] <- NA # Sweden	1936
+worlds_fairs[25, "cost"] <- 57.25 # Paris 1937 
+# worlds_fairs[26, "visitors"] <- NA # Finland	1938
+worlds_fairs[27, "cost"] <- 160 # New York City 1939
+worlds_fairs[27, "attending_countries"] <- 52 # New York City 1939
+
+# https://en.worldfairs.info/expodonnees.php?expo_id=32
+worlds_fairs[28, "area"] <- 80 # Belgium	1939
+worlds_fairs[28, "visitors"] <- 1.7 # Belgium	1939
+worlds_fairs[28, "cost"] <- 58.51 # Belgium	1939 | 150 million Belgian francs would be approximately $58.51 million 2015 dollars 
+
+# worlds_fairs[29, "cost"] <- NA # France	1947
+# worlds_fairs[30, "cost"] <- NA # Sweden	1949
+# worlds_fairs[31, "cost"] <- NA # France	1949
+
+# https://www.bie-paris.org/site/en/latest/blog/entry/cultivating-tourism-in-haiti-the-bicentennial-international-exposition-of-port-au-prince-1949
+worlds_fairs[32, "cost"] <- 4 # Expo Port-au-Prince 1949
+worlds_fairs[32, "visitors"] <- 0.07 # Expo Port-au-Prince 1949
+# worlds_fairs[33, "cost"] <- NA # France	1951
+# worlds_fairs[34, "cost"] <- NA # Italy	1953
+worlds_fairs[35, "visitors"] <- 0.6 # Expo 1953 Jerusalem
+# worlds_fairs[36, "cost"] <- NA # Italy	1954
+worlds_fairs[37, "visitors"] <- 0.12 # Italy	1955
+# worlds_fairs[38, "cost"] <- NA # Sweden	1955
+# worlds_fairs[39, "cost"] <- NA # Israel	1956
+# worlds_fairs[40, "cost"] <- NA # West Germany	1957
+worlds_fairs[41, "cost"] <- 43.4 # Belgium	1958
+# worlds_fairs[42, "cost"] <- NA # Italy	1961
+worlds_fairs[43, "cost"] <- 22.8 # Seattle 1962
+# worlds_fairs[44, "cost"] <- NA # West Germany	1965
+worlds_fairs[45, "cost"] <- 384.7 # 1967 Canada 415.920 CAD million would be approximately 384.7 million USD
+# worlds_fairs[46, "cost"] <- 156.00 # San Antonio 1968
+worlds_fairs[47, "cost"] <- 247.54 # Japan	1970
+# worlds_fairs[48, "cost"] <- NA # Hungary	1971
+worlds_fairs[49, "cost"] <- 78.40 # Spokane	1974
+worlds_fairs[50, "cost"] <- 155.2 # Japan	1975
+# worlds_fairs[51, "cost"] <- NA # Bulgaria	1981
+worlds_fairs[52, "cost"] <- 111 # Knoxville	1982
+worlds_fairs[53, "cost"] <- 442.5 # New Orleans	1984
+worlds_fairs[54, "cost"] <- 763.7 # Japan	1985
+# worlds_fairs[55, "cost"] <- NA # Bulgaria	1985
+worlds_fairs[56, "cost"] <- 609.52 # Canada	1986
+worlds_fairs[57, "cost"] <- 642.2 # Australia	1988
+# worlds_fairs[58, "cost"] <- NA # Bulgaria	1991
+# worlds_fairs[59, "cost"] <- 2332 # Spain 1992
+# worlds_fairs[60, "cost"] <- 568.75 # Italy 1992 
+# worlds_fairs[61, "cost"] <- 2800 # South Korea 1993
+# worlds_fairs[62, "cost"] <- 2952 # Portugal 1998 
+worlds_fairs[63, "cost"] <- 2238 # Germany	2000
+# worlds_fairs[64, "cost"] <- 3130 # Japan 2005
+# worlds_fairs[65, "cost"] <- 1070 # Spain 2008
+worlds_fairs[66, "cost"] <- 8800  # China	2010
+
+#https://www.exhibitionworld.co.uk/crossing-oceans-expo-2012-yeosu-korea
+worlds_fairs[67, "cost"] <- 2000 # South Korea 2012
+
+worlds_fairs[68, "cost"] <- 1640 # Italy 2015
+worlds_fairs[69, "cost"] <- 3000 # Kazakhstan 2017
+worlds_fairs[70, "cost"] <- 14600 # Dubai 2022
+
 
 
 # we still have 21 null values for cost
@@ -111,9 +164,9 @@ worlds_fairs[9, "cost"] <- 1.7 # Spain 1881
 # area	4 and attending_countries	5	
 ```
 
-To address the missing values we will attempt to use an advanced imputation method to help fill in the remaining missing values using a more sophisticated technique than the median. Using the mice package (https://amices.org/mice/), we will consider the relationships between variables to fill in the missing data.
+To address the missing values, we will use an imputation method to help fill in the remaining missing values using a more sophisticated technique than the median. Using the mice package (https://amices.org/mice/), we will consider the relationships between variables to fill in the missing data.
 
-Instead of using KNN we decided to try PMM (Predictive Mean Matching). This matches each missing value with the nearest observed values and imputes from those values. Effective for maintaining the distribution of the data. PMM does multiple imputations by default when you set m > 1, creating multiple versions of the dataset with imputed values, reflecting the uncertainty of the missing data.
+Instead of using KNN, we decided to try PMM (Predictive Mean Matching). This matches each missing value with the nearest observed values and imputes from those values. Effective for maintaining the distribution of the data. PMM does multiple imputations by default when you set m > 1, creating multiple versions of the dataset with imputed values, reflecting the uncertainty of the missing data.
 ```{r}
 
 suppressMessages(library(mice))
@@ -122,25 +175,35 @@ suppressMessages(library(mice))
 md.pattern(worlds_fairs) # Blue is observed, red is missing
 
 imputed_data <- mice(worlds_fairs, method = 'pmm', m = 5, maxit = 50)
+#imputed_data <- mice(worlds_fairs, method = 'norm', m = 5, maxit = 50) # Gives negative values
+#imputed_data <- mice(worlds_fairs, method = 'norm.predict', m = 5, maxit = 50) # Gives negative values
+#imputed_data <- mice(worlds_fairs, method = 'mean', m = 5, maxit = 50) # Gives negative values
 #imputed_data <- mice(worlds_fairs, method = 'pmm', m = 5, maxit = 50, seed = 1842)
 # we are using the Predictive Mean Matching method and we generated 5 different versions of the dataset, each with slightly different imputed values and 50 iterations with random seed 1842
 
 # Inspect the imputed data.
 #summary(imputed_data)
 
+# Matrix of the imputed values for the cost variable
+imputed_data$imp$cost
+
 # Visual summary of the imputation process
 stripplot(imputed_data)
 # helps you understand how the imputed values compare to the observed data and whether the imputation seems reasonable.
 
 # Extract the Dataset
-worlds_fairs_imputed <- complete(imputed_data)
+worlds_fairs_imputed <- complete(imputed_data,3)
 
 # Compare Before and After
 summary(worlds_fairs$cost)
 summary(worlds_fairs_imputed$cost)
 
-skim(worlds_fairs_imputed)
-skim(worlds_fairs)
+#skim(worlds_fairs)
+#skim(worlds_fairs_imputed)
+
+imputed_fairs <- worlds_fairs_imputed %>% dplyr::select("start_year","country", "city", "cost")
+imputed_fairs
+
 ```
 
 
@@ -157,20 +220,6 @@ ggplot(worlds_fairs_imputed, aes(x = start_year, y = visitors)) +
 
 ```
 
-```{r}
-ggplot(worlds_fairs_imputed, aes(x = cost, y = visitors)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  labs(title = "Cost vs. Visitors",
-       x = "Cost (in millions)",
-       y = "Visitors (in millions)") +
-  theme_minimal()
-
-cost_visitors_df <- worlds_fairs_imputed[, c("cost", "visitors")]
-
-cost_visitors_df
-
-```
 
 ```{r}
 # Rename counties to 
@@ -193,6 +242,12 @@ ggplot(worlds_fairs_imputed %>%
 ```
 
 ```{r}
+
+cost_expositions_df <- worlds_fairs_imputed[, c("cost", "start_year")]
+
+cost_expositions_df
+
+
 worlds_fairs_imputed %>%
   group_by(start_year) %>%
   summarise(avg_cost = mean(cost, na.rm = TRUE)) %>%
@@ -217,3 +272,17 @@ worlds_fairs_imputed %>%
 #sessioninfo::session_info(include_base = TRUE)
 ```
 
+```{r}
+ggplot(worlds_fairs_imputed, aes(x = cost, y = visitors)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(title = "Cost vs. Visitors",
+       x = "Cost (in millions)",
+       y = "Visitors (in millions)") +
+  theme_minimal()
+
+cost_visitors_df <- worlds_fairs_imputed[, c("cost", "visitors")]
+
+cost_visitors_df
+
+```
