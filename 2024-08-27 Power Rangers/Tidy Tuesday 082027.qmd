@@ -1,0 +1,359 @@
+---
+title: "Tidy Tuesday"
+subtitle: "Week 35"
+author: "Cristian T"
+date: last-modified
+format: 
+   html:
+     df-print: paged
+     embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+
+```
+
+This week we are exploring the Power Rangers Franchise!
+
+In 1993, five ordinary teenagers exploded on the pop-culture scene with
+the launch of Mighty Morphin Power Rangers. Together they broke down
+barriers. They defeated evil by demonstrating teamwork, inclusivity, and
+diversity to people of all ages. Today, this grand tradition continues
+as new Ranger teams and new generations of fans discover these essential
+values again.
+
+The series, created by Haim Saban, has one of the most popular taglines
+in history, "It's Morphin Time!" The TV series "Mighty Morphin Power
+Rangers" (MMPR) launched on August 28, 1993. Power Rangers quickly
+became the #1 kids action brand and a global phenomenon. With its
+current 25th season, "Power Rangers Super Ninja Steel," the show is now
+the second-longest-running, non-soap-opera, scripted program on American
+TV (after "The Simpsons"). There are also over 830 episodes in its
+library. Currently, Power Rangers is seen in more than 150 markets
+around the world. It's also translated into numerous languages and is a
+favorite on many indispensable children's programming blocks around the
+world. Go Go Power Rangers on 8.28!
+
+power_rangers_episodes.csv
+
+| variable      | class     | description                                        |
+|----------------|----------------|---------------------------------------|
+| season_title  | character | title of the overall season                        |
+| episode_num   | double    | number of this episode within this season          |
+| episode_title | character | title of this episode                              |
+| air_date      | double    | date on which this episode first aired in the U.S. |
+| IMDB_rating   | double    | average rating among IMDB users                    |
+| total_votes   | double    | total votes on IMDB                                |
+| desc          | character | free-text description of this episode              |
+
+
+
+
+
+power_rangers_seasons.csv
+
+| variable           | class     | description                                                            |
+|--------------------|-----------|------------------------------------------------------------------------|
+| season_title       | character | title of this season                                                   |
+| season_num         | double    | season number                                                          |
+| number_of_episodes | double    | number of episodes in this season                                      |
+| air_date_first_ep  | double    | date on which the first episode in this season first aired in the U.S. |
+| air_date_last_ep   | character | date on which the last episode in this season first aired in the U.S.  |
+| producer           | character | the company that produced this season                                  |
+| IMDB_rating        | double    | average rating of this seasons among IMDB users                        |
+
+
+```{r}
+# Load the tidytuesday package
+suppressMessages(library(tidytuesdayR)) # For accessing TidyTuesday datasets
+suppressMessages(library(skimr)) # For summary and descriptive statistics
+suppressMessages(library(tidyverse)) # For data manipulation and visualization
+suppressMessages(library(dplyr)) # For data manipulation and transformation
+suppressMessages(library(ggplot2)) # For data visualization
+suppressMessages(library(RColorBrewer)) # For color palettes in visualizations
+suppressMessages(library(mdsr)) # For spatial analysis
+suppressMessages(library(tidytext)) # For text mining and analysis
+suppressMessages(library(textstem)) # For lemmatization
+
+
+# Load the current week's dataset
+tuesdata <- tidytuesdayR::tt_load('2024-08-27')
+
+power_rangers_episodes <- tuesdata$power_rangers_episodes
+pwe <- power_rangers_episodes
+power_rangers_seasons <- tuesdata$power_rangers_seasons
+pws <- power_rangers_seasons
+
+
+# Explore the structure of the dataset
+str(pwe)
+skim(pws)
+
+str(pws)
+skim(pws)
+
+# View the first few rows of the dataset
+head(pwe)
+head(pws)
+
+# Join the datasets on the common key (e.g., season_id)
+combined_data <- pwe %>%
+  inner_join(pws, by = "season_title") 
+
+combined_data %>% select("season_title", "season_num")
+
+
+#tidytuesdayR::use_tidytemplate()
+```
+
+##### Clean the data
+
+```{r}
+
+# Doesn't appear the data needs cleaned
+```
+
+#### Missing Values
+
+DF doesn't have any missing data and column seem appropriate for what we are looking at
+
+#### Text Analysis
+#### Plot 1 Top Words
+```{r}
+
+# Convert text to lowercase
+pwe$desc <- tolower(pwe$desc)
+
+# Count the words excluding stopwords
+pwe_text_analysis <- pwe %>%
+  unnest_tokens(word, desc) %>%
+  anti_join(stop_words, by = "word") %>%
+  count(word, sort = TRUE)
+
+# Print Tidy Text
+pwe_text_analysis
+
+# Get the top 20 words
+top_20_words <- pwe_text_analysis %>%
+  top_n(20, n)
+
+suppressMessages(library(treemapify))
+
+# Graph the top 20 words
+ggplot(top_20_words, aes(area = n, fill = n, label = word)) +
+    geom_treemap() +
+    geom_treemap_text(color = "white", place = "centre", grow = TRUE) +
+    scale_fill_gradientn(colors = pals::alphabet(20)) +
+  labs(title = "Top 20 Words Found in Power Rangers Episode Descriptions",
+       x = NULL,
+       y = "Count") +
+  theme_minimal(base_size = 14) +  # Set base font size for readability
+  theme(axis.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 10),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "none") +
+  scale_y_continuous(labels = NULL)
+
+
+
+```
+
+
+
+
+#### Plot 2 Bigram
+A "bigram" is a pair of consecutive words that appear together in a text. It is a fundamental concept in n-gram analysis, where "n" represents the number of words in the sequence. By generating and analyzing bigrams from the top words data frame, we can uncover the relationships between key terms within the text. Visualizing these bigrams as a network graph allows us to see how words are connected, revealing prominent themes and recurring concepts within the episodes.
+
+```{r}
+
+suppressMessages(library(textdata))
+suppressMessages(library(igraph))
+suppressMessages(library(ggraph))
+suppressMessages(library(tidygraph))
+
+# Generates bigrams from the episode descriptions and counts their occurrences
+pwe_bigrams <- pwe %>%
+  unnest_tokens(bigram, desc, token = "ngrams", n = 2) %>% 
+  count(bigram, sort = TRUE)
+
+# Separates each bigram into individual words for further processing
+bigrams_separated <- pwe_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+# Removes stop words
+bigrams_filtered <- bigrams_separated %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+# Prepare the top_words data
+top_words <- bigrams_filtered %>%
+  arrange(desc(n)) %>%
+  slice_head(n = 100)
+
+# Create nodes data frame (unique words from bigrams)
+nodes <- top_words %>%
+  select(word1, word2) %>%
+  pivot_longer(cols = everything(), names_to = "type", values_to = "name") %>%
+  distinct(name) %>%
+  mutate(id = row_number())
+
+# Defines the edges (relationships) between words on bigram frequencies.
+edges <- top_words %>%
+  inner_join(nodes, by = c("word1" = "name")) %>%
+  rename(from = id) %>%
+  inner_join(nodes, by = c("word2" = "name")) %>%
+  rename(to = id) %>%
+  select(from, to, n)
+
+# We created a network graph of the word relationships. The nodes data frame is made to list all unique words from the bigrams; each is assigned a unique identifier by pivoting the top_words data frame, ensuring that each word appears only once. The edges data frame is created to define the relationships between these words. It maps each word pair (from the bigrams) to their respective identifiers. It includes the frequency of each bigram as an edge attribute. These data frames are used to build a graph object.
+
+# Create tbl_graph
+graph <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+
+# The tbl_graph() function creates a graph using the nodes and edges data frames. 
+
+# The layout for the graph is set to "fr" (Fruchterman-Reingold) arranges the nodes in a visually appealing manner. Edges are shown with arrows to indicate direction and nodes are displayed as points.
+
+# Add Degree to Node Data to use node attributes (like degree) to control aspects of the visualization
+V(graph)$degree <- degree(graph)
+
+ggraph(graph, layout = "fr") + 
+  geom_edge_link(arrow = arrow(type = "open"), alpha = 0.2) +
+    geom_node_point(aes(size = degree), shape = 21, fill = "lightblue", color = "black", alpha = 0.7) +
+  geom_node_text(aes(label = name), repel = TRUE, max.overlaps = Inf) +
+  theme(panel.background = element_rect(fill = "transparent"),
+        legend.position = "none") +
+  labs(title = "Power Rangers Bigrams Word Relationships") 
+
+
+
+#save copy of image
+#ggsave("Power Rangers Bigrams Word Relationships.png", plot = p, width = 8, height = 5, units = "in")
+
+```
+In the network graph, nodes represent unique words, and edges (lines connecting nodes) indicate the frequency with which word pairs co-occur. This visualization highlights the most influential words and their relationships, providing a clear view of the text's structure. For example, high-frequency bigrams such as "power rangers" and "lord zedd" are central to understanding the core elements and recurring themes in the series. These terms highlight key characters and locations, such as "lord zedd" and "angel grove," which play significant roles.
+
+The graph also shows relationships and character pairings like "bulk skull" (Bulk and Skull) and "dr oliver", indicating notable recurring characters. Additionally, lower-frequency bigrams such as "love potion" and "halloween party" may refer to specific plot points or events that, while less central, still contribute to the series' narrative.
+
+
+#### Plot 3 NRC
+The NRC Emotion Lexicon is a powerful tool designed to analyze and categorize the emotional content of text. It associates words with eight basic emotions—anger, fear, anticipation, trust, surprise, sadness, joy, and disgust—and two overarching sentiments: positive and negative. This lexicon helps us understand the emotional underpinnings of various texts by mapping the words to specific emotional and sentiment categories.
+
+When applied to TV show descriptions, such as those for "Power Rangers," the NRC Emotion Lexicon provides insights into the emotional landscape of the content. By examining the frequency and distribution of different emotions, we can uncover how various feelings are portrayed and how they contribute to the overall narrative. 
+
+```{r}
+# Download NRC lexicon
+nrc_lexicon <- get_sentiments("nrc")
+
+# Unnest tokens to get individual words
+pwe_words <- pwe %>%
+  unnest_tokens(word, desc)
+
+# Join with NRC lexicon to get sentiment scores
+pwe_sentiments <- pwe_words %>%
+  inner_join(nrc_lexicon, by = "word")
+
+# Count the sentiment scores
+sentiment_counts <- pwe_sentiments %>%
+  count(sentiment)
+
+# Plot the sentiment counts
+ggplot(sentiment_counts, aes(x = sentiment, y = n, fill = sentiment)) +
+  geom_bar(stat = "identity") +  # Create the bar plot
+  geom_text(aes(label = n), hjust = -0.2, size = 2.5) +  # Add totals at the end of the bars
+  scale_fill_manual(values = brewer.pal(10, name = "Set3")) +  # Use color-blind-friendly palette
+  coord_flip()  +  # Flip coordinates
+  labs(
+    title = "Sentiment Analysis of Power Rangers Episodes",
+    subtitle = "Using NRC Emotion Lexicon",
+    x = "Sentiment Category",
+    y = "Number of Mentions",
+  ) +
+  theme_minimal(base_size = 14) +  # Set base font size for readability
+  theme(axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "none") +
+  scale_y_continuous(labels = NULL)
+  
+
+
+```
+
+The "negative" sentiment category has the highest count (1,901), closely followed by "positive" (1,820). Despite a higher count of "negative" mentions, the "positive" sentiment is nearly as frequent (1,820 vs. 1,901), indicating that while the show deals with conflicts, it balances this with uplifting or positive moments. This balance could reflect the moral lessons or inspirational themes typical in children's programming, where good triumphs over evil. However, specific negative emotions such as "fear" (1,344) and "anger" (895) are also prevalent, suggesting that the Mighty Morphin Power Rangers frequently deals with challenging situations, conflicts, or threats, which might contribute to the suspense and tension while also experiencing elements of danger or threat, likely due to the show's premise involving battles against villains and monsters that is typical of an action-adventure series. We also see that "Disgust" (516) and "sadness" (619) also appear, indicating that the series occasionally explores themes of loss, disappointment, or moral disdain. 
+
+On the other hand, the "trust" sentiment (1,293) has a significant presence, which might reflect themes of teamwork, friendship, and reliability among the characters. Trust is likely an important recurring element in the narrative, given the show's focus on a team of heroes. "Anticipation" (850) also ranks highly, suggesting that the storyline frequently builds suspense or excitement about future events. This is consistent with the show's episodic nature, where each episode often ends with a cliffhanger or foreshadows future conflicts. "Joy" (720) and "surprise" (490) are less frequent than other emotions but still significant, suggesting moments of happiness, celebration, and unexpected events. 
+
+
+#### Plot 4 LDA with lemmatize
+Latent Dirichlet Allocation (LDA) is a statistical model for topic modeling. We attempt to identify topics that occur in a collection of documents. We are treating each document as a season to see if anything stands out. LDA uses a beta measurment that shows the weight (probability) of each term within a particular topic. The beta value represents how strongly a term is associated with the topic. A higher value indicates that the term is more important or prevalent within that topic.
+```{r}
+suppressMessages(library(topicmodels)) # For topic modeling analysis
+# Combine episode title by season
+season_title <- combined_data %>%
+  group_by(season_num) %>%
+  summarize(episode_title = paste(episode_title, collapse = " "))
+
+# Unnest tokens to get individual words and remove stop words
+season_clean <- season_title %>%
+  unnest_tokens(word, episode_title) %>%
+  anti_join(stop_words, by = "word")
+
+# Lemmatize the words to their base form
+season_clean$word <- lemmatize_words(season_clean$word)
+
+# Create a document-term matrix grouped by season
+# Convert the count into a Document-Term Matrix (DTM), where rows represent documents (seasons), columns represent terms (words), and the matrix cells contain the count of words in each season.
+season_dtm <- season_clean %>%
+  count(season_num, word) %>%
+  cast_dtm(season_num, word, n)
+
+# Fit the LDA model
+lda_model <- LDA(season_dtm, k = 27, control = list(seed = 1842))  
+
+# Extract the top terms in each topic
+lda_topics <- tidy(lda_model, matrix = "beta")
+
+# Get the top terms for each topic
+# Beta is the term-topic matrix and represents the probability of each word belonging to each topic (season). Think of it as a measure of how important or relevant each word is to a particular topic (season). A higher value indicates that the term is more important or prevalent within that topic (season).
+# We are filtering on a beta value to limit the amount of topics displayed
+top_terms <- lda_topics %>%
+  group_by(topic) %>%
+  top_n(5, beta) %>%
+  ungroup() %>%
+  filter(beta >= 0.0245) %>%
+  arrange(topic, -beta)
+
+# Plot the top terms in each topic
+ggplot(top_terms, aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_color_gradientn(colors = brewer.pal(25, "Set3")) +  # Use a color gradient
+  coord_flip() +
+  labs(title = "Top Words from LDA Analysis Across Seasons",
+       x = "Term",
+       y = "Beta") +
+ theme(axis.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 10),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+
+
+
+```
+We see the term "ranger" appear prominently across several seasons, which we would expect since we previously saw a color associated with a ranger, indicating that central characters are the focus of the episodes, which could also tie different narratives or storylines together. Suggesting the ranger character faces challenges, enemies, or adventures. We also see that we have many topics (e.g., seasons 2, 7, 9, 18) that involve terms associated with battles, conflicts, or confrontations, suggesting that a major overarching theme across the TV series could be action, adventure, and struggle against various threats. We also see elements (e.g., seasons 1, 3, 7) reference natural elements ("thunder," "storm," "wild") and supernatural or fate-related concepts ("ghost," "karma," "fate"). The Mighty Morphin Power Rangers appear to include both natural and supernatural elements, potentially blending genres like fantasy, science fiction, and adventure. We also get a glimpse in season 3, which suggests themes related to personal growth, ethical decisions, and interpersonal relationships. As our intro indicated, "Together they broke down barriers. They defeated evil by demonstrating teamwork, inclusivity, and diversity to people of all ages." These themes indicate subplots and secondary themes where characters undergo moral or personal challenges in addition to the main action.
+
