@@ -1,0 +1,635 @@
+---
+title: "Tidy Tuesday"
+subtitle: "Week 36"
+author: "Cristian T"
+date: last-modified
+format: 
+   html:
+     df-print: paged
+     embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+
+```
+
+This week we are exploring the Stack Overflow Annual Developer Survey
+2024!
+
+This week's dataset is derived from the 2024 Stack Overflow Annual
+Developer Survey. Conducted in May 2024, the survey gathered responses
+from over 65,000 developers across seven key sections:
+
+-   Basic information
+-   Education, work, and career
+-   Tech and tech culture
+-   Stack Overflow community
+-   Artificial Intelligence (AI)
+-   Professional Developer Series - Not part of the main survey
+-   Thoughts on Survey
+
+The dataset provided for this analysis focuses exclusively on the
+single-response questions from the main survey sections. Each
+categorical response in the survey has been integer-coded, with
+corresponding labels available in the crosswalk file.
+
+`qname_levels_single_response_crosswalk.csv`
+
+| variable | class     | description                                        |
+|----------|-----------|----------------------------------------------------|
+| qname    | character | Categorical Question/Column Name in main data      |
+| level    | integer   | Integer index associated with each column response |
+| label    | character | Label associated with integer index                |
+
+`stackoverflow_survey_questions.csv`
+
+| variable | class     | description                                                |
+|----------|-----------|------------------------------------------------------------|
+| qname    | character | Categorical Question/Column Name in main data              |
+| question | character | Text of the question as it was presented to the respondent |
+| variable | class     | description                                                |
+
+`stackoverflow_survey_single_response.csv`
+
+| variable              | class     | description                                                                                          |
+|-----------------------|-----------|------------------------------------------------------------------------------------------------------|
+| response_id           | double    | Respondent ID                                                                                        |
+| main_branch           | integer   | Professional coding level of the respondent                                                          |
+| age                   | integer   | Age                                                                                                  |
+| remote_work           | integer   | Current work situation                                                                               |
+| ed_level              | integer   | Highest education level completed                                                                    |
+| years_code            | integer   | Years the respondent has coded in total; More than 50 years coded as 51                              |
+| years_code_pro        | integer   | Years the respondent has coded professionally; More than 50 years coded as 51                        |
+| dev_type              | integer   | Best current-job description                                                                         |
+| org_size              | integer   | People in the organization                                                                           |
+| purchase_influence    | integer   | Level of influence in purchasing new technology at their organization                                |
+| buildvs_buy           | integer   | How much customization was needed in most recent tool recommendation                                 |
+| country               | character | Country in which the respondent lives                                                                |
+| currency              | character | Currency of the country                                                                              |
+| comp_total            | double    | Total compensation                                                                                   |
+| so_visit_freq         | integer   | Stack Overflow visiting frequency                                                                    |
+| so_account            | integer   | Stack Overflow account status                                                                        |
+| so_part_freq          | integer   | Stack Overflow participation frequency                                                               |
+| so_comm               | integer   | Whether the respondent considers themself a member of the Stack Overflow community?                  |
+| ai_select             | integer   | Use AI in development process                                                                        |
+| ai_sent               | integer   | Stance on using AI tools as part of development workflow                                             |
+| ai_acc                | integer   | Trust in accuracy of AI as part of development workflow                                              |
+| ai_complex            | integer   | How well the respondent believes the AI tools they use in development workflows handle complex tasks |
+| ai_threat             | integer   | Belief that AI is a threat to current job                                                            |
+| survey_length         | integer   | Feeling about the length of the Stack Overflow Developer Survey this year                            |
+| survey_ease           | integer   | Ease of completion of this survey                                                                    |
+| converted_comp_yearly | double    | Converted compensation                                                                               |
+| r_used                | integer   | Flag if respondent used R in the previous year                                                       |
+| r_want_to_use         | integer   | Flag if respondent want to use R in the next year                                                    |
+
+
+```{r}
+# Load the tidytuesday package
+suppressMessages(library(tidytuesdayR)) # For accessing TidyTuesday datasets
+suppressMessages(library(skimr)) # For summary and descriptive statistics
+suppressMessages(library(tidyverse)) # For data manipulation and visualization
+suppressMessages(library(dplyr)) # For data manipulation and transformation
+suppressMessages(library(ggplot2)) # For data visualization
+suppressMessages(library(RColorBrewer)) # For color palettes in visualizations
+suppressMessages(library(mdsr)) # For spatial analysis
+suppressMessages(library(tidytext)) # For text mining and analysis
+suppressMessages(library(textstem)) # For lemmatization
+
+
+# Load the current week's dataset
+tuesdata <- tidytuesdayR::tt_load('2024-09-03')
+
+# Extract datasets from the TidyTuesday dataset
+qname_levels_single_response_crosswalk <- tuesdata$qname_levels_single_response_crosswalk
+stackoverflow_survey_questions <- tuesdata$stackoverflow_survey_questions
+stackoverflow_survey_single_response <- tuesdata$stackoverflow_survey_single_response
+
+# Rename datasets 
+survey_questions <- stackoverflow_survey_questions
+survey_responses <- stackoverflow_survey_single_response
+qname_levels <- qname_levels_single_response_crosswalk
+
+# Explore the structure of the dataset
+str(survey_questions) # Display the structure of 'survey_questions' (type of variables, number of observations)
+#skim(survey_questions) 
+
+# Explore the structure of the survey responses dataset
+str(survey_responses) # Display the structure of 'survey_responses'
+skim(survey_responses) # Provide detailed summary statistics for 'survey_responses' (missing values, summary stats)
+
+# View the first few rows of the dataset
+head(survey_questions)
+head(survey_responses)
+
+# Export data
+#write.csv(qname_levels_single_response_crosswalk, "qname_levels_single_response_crosswalk.csv", row.names = FALSE)
+#write.csv(stackoverflow_survey_questions, "stackoverflow_survey_questions.csv", row.names = FALSE)
+#write.csv(stackoverflow_survey_single_response, "stackoverflow_survey_single_response.csv", row.names = FALSE)
+
+
+#tidytuesdayR::use_tidytemplate()
+```
+#### Clean the data
+```{r}
+
+# Skim showed a lot of missing values so we will remove rows with missing info
+#survey_responses_clean <- survey_responses %>% drop_na()
+```
+
+##### Merge the data
+We will merge the `qname_levels` and `survey_questions` data frames to get a full picture of the questions.
+```{r}
+
+# Merge qname_levels and survey_questions on the 'qname' column
+merged_questions <- merge(qname_levels, survey_questions, by="qname", all=TRUE) %>%
+  select(level, question, qname, label, everything())
+   
+# Inspect the merged data
+head(merged_questions)
+
+# Remove HTML tags from the 'question' column using regular expressions
+merged_questions$question <- gsub("<[^>]+>", "", merged_questions$question)
+
+# Add missing level and label for rows 34-36
+merged_questions[34, "level"] <- 1
+merged_questions[34, "label"] <- "income"
+merged_questions[35, "level"] <- 2
+merged_questions[35, "label"] <- "residence"
+merged_questions[36, "level"] <- 3
+merged_questions[36, "label"] <- "day to day currency"
+
+# Add missing level and label for rows 126 and 127
+merged_questions[126, "level"] <- 1
+merged_questions[126, "label"] <- "total experience"
+merged_questions[127, "level"] <- 2
+merged_questions[127, "label"] <- "professional experience"
+
+# Inspect the modified data
+head(merged_questions[c(34:36, 126:127), ])
+
+
+
+
+```
+
+
+
+#### EDA
+```{r}
+
+# Load a CSV file that maps countries to continents
+manual_continent_mapping <- read.csv("/Users/cristianthirteen/Downloads/Notre Dame/SP 24 Linear Models SP 24/Linear Models Data Sets/Countries-Continents.csv")
+
+# Rename the "Country" column in the manual_continent_mapping to "country" for consistency with survey_responses
+manual_continent_mapping <- manual_continent_mapping %>%
+  rename(country = Country)
+
+# Merge manual_continent_mapping with survey_responses by the "country" column
+survey_responses <- merge(manual_continent_mapping, survey_responses, by = "country", all=TRUE) # The 'all=TRUE' ensures all countries from both datasets are included, even if there's no match
+
+
+# Create a named vector for the country corrections
+country_corrections <- c(
+  "Brunei Darussalam" = "Brunei",
+  "Burkina Faso" = "Burkina",
+  "Congo, Democratic Republic of" = "Congo",
+  "Congo, Republic of the..." = "Congo",
+  "Democratic Republic of the Congo" = "Congo",
+  "Democratic People's Republic of Korea" = "North Korea",
+  "Iran, Islamic Republic of..." = "Iran",
+  "Lao People's Democratic Republic" = "Laos",
+  "Libyan Arab Jamahiriya" = "Libya",
+  "Micronesia, Federated States of..." = "Micronesia",
+  "Myanmar" = "Burma (Myanmar)",
+  "Nomadic" = "Nomadic",
+  "Republic of Korea" = "South Korea",
+  "Republic of Moldova" = "Moldova",
+  "Republic of North Macedonia" = "North Macedonia",
+  "Syrian Arab Republic" = "Syria",
+  "United Kingdom of Great Britain and Northern Ireland" = "United Kingdom",
+  "United Republic of Tanzania" = "Tanzania",
+  "Venezuela, Bolivarian Republic of..." = "Venezuela",
+  "Viet Nam" = "Vietnam"
+)
+
+# Apply the country corrections to the survey_responses dataset
+survey_responses<- survey_responses %>%
+  mutate(country = recode(country, !!!country_corrections))
+
+# Apply corrections for missing continent names based on the country values
+survey_responses <- survey_responses %>%
+     mutate(Continent = case_when(
+       is.na(Continent) & country == "Brunei" ~ "Asia",
+       is.na(Continent) & country == "Burkina" ~ "Africa",
+       is.na(Continent) & country == "Congo" ~ "Africa",
+       is.na(Continent) & country == "North Korea" ~ "Asia",
+       is.na(Continent) & country == "Iran" ~ "Asia",
+       is.na(Continent) & country == "Laos" ~ "Asia",
+       is.na(Continent) & country == "Libya" ~ "Africa",
+       is.na(Continent) & country == "Micronesia" ~ "Oceania",
+       is.na(Continent) & country == "Burma (Myanmar)" ~ "Asia",
+       is.na(Continent) & country == "Nomadic" ~ "Nomadic",
+       is.na(Continent) & country == "South Korea" ~ "Asia",
+       is.na(Continent) & country == "Moldova" ~ "Europe",
+       is.na(Continent) & country == "North Macedonia" ~ "Europe",
+       is.na(Continent) & country == "Syria" ~ "Asia",
+       is.na(Continent) & country == "United Kingdom" ~ "Europe",
+       is.na(Continent) & country == "Tanzania" ~ "Africa",
+       is.na(Continent) & country == "Venezuela" ~ "South America",
+       is.na(Continent) & country == "Vietnam" ~ "Asia",
+       TRUE ~ Continent
+     ))
+
+# Group survey_responses by Continent and count the number of respondents per continent
+continent_counts <- survey_responses %>%
+  filter(!is.na(Continent)) %>%
+  group_by(Continent) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>% 
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Filter rows where country is "Congo"
+# survey_responses %>% filter(country == "Congo")
+
+   
+# Plot number of respondents by country
+ggplot(continent_counts, aes(x = reorder(Continent, -count), y = count, fill = Continent)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  geom_text(aes(label = count), hjust = -0.1, size = 2) +
+  labs(title = "Number of Respondents by Continent",
+       x = "Continent",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 12, margin = margin(r = 10)),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  coord_flip()
+
+
+#write.csv(survey_responses, "survey_responses.csv", row.names = FALSE)
+
+
+
+```
+The survey data reveals that nearly half (47.3%) of the respondents are from Europe, making it the largest represented continent. North America follows with 23.5% of respondents, and Asia accounts for 19.0%. South America, Africa, and Oceania have smaller representations, with 4.14%, 3.13%, and 2.84% of respondents, respectively. A small fraction (0.073%) of respondents identified as "Nomadic," reflecting a respondent population that does not associate with a specific continent.
+
+#### Plot 1  Top 3 Counties by Age
+```{r}
+# Rename age groups
+age_groups <- survey_responses %>%
+  mutate(age = factor(age, levels = 1:8, labels = c(
+    "18-24 years old",
+    "25-34 years old",
+    "35-44 years old",
+    "45-54 years old",
+    "55-64 years old",
+    "65 years or older",
+    "Prefer not to say",
+    "Under 18 years old"
+  )))
+
+# Filter and count by continent and age
+continent_age_counts <- age_groups %>%
+  filter(!is.na(dev_type)) %>% # Exclude rows with missing 'dev_type'
+  filter(Continent %in% c("North America", "Europe", "Asia")) %>%  # Select only the top 3 continents
+  mutate(region = case_when(
+    Continent == "North America" ~ "North America",
+    Continent == "Europe" ~ "Europe",
+    Continent == "Asia" ~ "Asia"
+  )) %>%
+  group_by(region, age) %>% # Group by region and age
+  summarise(count = n(), .groups = 'drop') %>% # Count the number of responses in each group
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Create a bar plot showing the number of respondents by age and region
+ggplot(continent_age_counts, aes(x = age, y = count, fill = region)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = count), position = position_dodge(width = 0.9),hjust = -0.1,size = 2) +
+  scale_fill_manual(values = brewer.pal(10, "Set3")) +
+  labs(title = "Number of Respondents by Age and Region",
+       x = "Age Group",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+           axis.title.y = element_text(size = 12),
+           plot.title = element_text(size = 14, face = "bold"),
+           panel.grid.major = element_blank(),
+           panel.grid.minor = element_blank(),
+           legend.position = c(0.85, 0.85)) +
+     coord_flip()
+```
+Across all regions, most respondents fall into the 25-34-year-old age group. Europe stands out with a notably higher percentage in this age bracket (19.60%) compared to Asia (8.59%) and North America (8.29%). North America has a relatively higher percentage of respondents in the 35-44-year-old group (6.88%) compared to both Asia and Europe. Additionally, there is a significant representation in the 18-24-year-old group across all regions, reflecting the common trend of younger individuals being more engaged with online surveys and tech-related topics.
+
+In contrast, older age groups (55 years or older) show generally lower representation across all regions, which might indicate lower engagement or participation rates from older individuals. The percentage of respondents choosing "Prefer not to say" about their age is relatively small across all regions, suggesting that most respondents are comfortable disclosing their age.
+
+#### Plot 2 Counts by Age Group (USA)
+```{r}
+# Filter for USA and aggregate counts by age
+usa_age_counts <- age_groups %>%
+  filter(country == "United States of America") %>%
+  group_by(age) %>%
+  summarise(count = n(), .groups = 'drop') %>% 
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Create a bar plot 
+ggplot(usa_age_counts, aes(x = reorder(age, count), y = count, fill = age)) +
+     geom_bar(stat = "identity") +
+     scale_fill_manual(values = brewer.pal(10, "Set3")) +
+  geom_text(aes(label = count), hjust = -0.1, size = 2) +
+     labs(title = "Respondents by Age Group (USA)",
+          x = "Age Group",
+          y = "Count",
+          fill = "Age Group") +
+     theme_minimal() +
+     theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+           axis.title.y = element_text(size = 12),
+           plot.title = element_text(size = 14, face = "bold"),
+           panel.grid.major = element_blank(),
+           panel.grid.minor = element_blank(),
+           legend.position = "none") +  # Remove the legend
+     coord_flip()
+```
+
+In the US, the age distribution of respondents reveals a significant concentration in the 25-34 age group, constituting 30.6% of the total respondents. The 35-44 age group follows closely, making up 26.3%. 18-24-year-olds account for 12.7%, showing notable but lesser participation than older groups. 45-54 years olds represent 13.9%, maintaining a substantial middle-aged presence. 55-64 years olds make up 8.12%, and those under 18 constitute 4.56%. The 65 and older group is the smallest at 3.00%. Additionally, 0.811% of respondents chose not to disclose their age.
+
+Overall, 56.9% of respondents fall within the 25-44 age range, indicating that the survey predominantly reflects individuals in their prime working years.
+
+#### Plot 3 Counts by Education Level (USA)
+
+```{r}
+
+# Rename education
+education_level <- survey_responses %>%
+  mutate(ed_level = factor(ed_level, levels = 1:8, labels = c(
+    "Associate degree",
+    "Bachelor’s degree",
+    "Master’s degree",
+    "Primary/elementary school",
+    "Professional degree",
+    "High School",
+    "Some college",
+    "Something else"
+  )))
+    
+    
+# Filter for USA and aggregate counts by education
+usa_edu_counts <- education_level %>%
+  filter(country == "United States of America") %>%
+  group_by(ed_level) %>%
+  summarise(count = n(), .groups = 'drop') %>% 
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Create a bar plot
+ggplot(usa_edu_counts, aes(x = reorder(ed_level, count), y = count, fill = ed_level)) +
+     geom_bar(stat = "identity") +
+     scale_fill_manual(values = brewer.pal(10, "Set3")) +
+  geom_text(aes(label = count), hjust = -0.1, size = 2) +
+     labs(title = "Respondents by Education Level (USA)",
+          x = "Age Group",
+          y = "Count",
+          fill = "Age Group") +
+     theme_minimal() +
+     theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+           axis.title.y = element_text(size = 12),
+           plot.title = element_text(size = 14, face = "bold"),
+           panel.grid.major = element_blank(),
+           panel.grid.minor = element_blank(),
+           legend.position = "none") +  # Remove the legend
+     coord_flip()
+```
+Our data for the US shows a predominance of Bachelor's Degree Holders, with 50.1% holding a Bachelor's degree. We also see a significant amount of graduate degrees, with Master's degree holders making up 18.4% of the respondents, suggesting that the survey sample is highly educated. We also see people with associate degrees (3.96%), professional degrees (5.37%), high school diplomas (5.82%), and some college degrees (13.1%). The distribution shows a clear preference towards higher education among respondents.
+
+
+#### Plot 4 Top 3 Countries by Job Role
+
+```{r}
+
+# Rename job roles
+dev_roles <- survey_responses %>%
+  mutate(dev_type = factor(dev_type, levels = 1:34, labels = c(
+    "Academic researcher",
+    "Blockchain",
+    "Cloud infrastructure engineer",
+    "Data engineer",
+    "Data or business analyst",
+    "Data scientist or machine learning specialist",
+    "Database administrator",
+    "Designer",
+    "Developer Advocate",
+    "Developer Experience",
+    "Developer, AI",
+    "Developer, back-end",
+    "Developer, desktop or enterprise applications",
+    "Developer, embedded applications or devices",
+    "Developer, front-end",
+    "Developer, full-stack",
+    "Developer, game or graphics",
+    "Developer, mobile",
+    "Developer, QA or test",
+    "DevOps specialist",
+    "Educator",
+    "Engineer, site reliability",
+    "Engineering manager",
+    "Hardware Engineer",
+    "Marketing or sales professional",
+    "Other",
+    "Product manager",
+    "Project manager",
+    "Research & Development role",
+    "Scientist",
+    "Security professional",
+    "Senior Executive (C-Suite, VP, etc.)",
+    "Student",
+    "System administrator"
+  )))
+
+# Filter for top 2 continents, including United States and count respondents by job role
+continent_age_counts_dev <- dev_roles %>%
+  filter(Continent %in% c("North America", "Europe", "Asia")) %>% 
+  mutate(region = case_when(
+    Continent == "North America" ~ "United States of America",
+    Continent == "Europe" ~ "Europe",
+    Continent == "Asia" ~ "Asia"
+  )) %>%
+  group_by(region, dev_type) %>%
+  summarise(count = n(), .groups = 'drop') %>% 
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Group less common job roles into "Other"
+threshold <- 150  # Threshold for grouping
+grouped_data <- continent_age_counts_dev %>%
+  filter(!is.na(dev_type)) %>%
+  mutate(dev_type = if_else(count < threshold, "Other", as.character(dev_type))) %>%
+  group_by(region, dev_type) %>%
+  summarise(count = sum(count), .groups = 'drop') %>% 
+  mutate(percentage = (count / sum(count)) * 100)
+
+
+# Create the plot
+ggplot(grouped_data, aes(x = dev_type, y = count, fill = region)) +
+  geom_bar(stat = "identity", position = "stack") +  # Change to "stack" for stacked bars
+  geom_text(aes(label = count), position = position_stack(vjust = 0.5), size = 2) +  # Adjust text position for stacking
+  scale_fill_manual(values = brewer.pal(10, "Set3")) +
+  labs(title = "Respondents by Job Role and Region",
+       x = "Job Role",
+       y = "Count",
+       fill = "Region") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 12),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = c(0.85, 0.85)) +
+  coord_flip()  # Flip coordinates for better label readability
+
+
+```
+In analyzing job roles across different regions, it is evident that Europe has the highest proportion of full-stack developers (15.7%), reflecting a strong demand for professionals skilled in front-end and back-end development. Asia also shows a significant presence of full-stack developers (6.19%) and a notable percentage of back-end developers (3.70%), indicating a balanced focus on both roles, along with a substantial proportion of data scientists or machine learning specialists (3.36%). In the United States, full-stack developers (8.34%) and back-end developers (3.60%) are prominent, with a considerable share in the "Other" category (3.62%) that encompasses diverse roles. Across all regions, less common roles like academic researchers, blockchain developers, and cloud infrastructure engineers have low representation, generally below 1%. Students constitute a notable portion of respondents in Europe (3.98%) and the United States (1.99%), while research and development roles are significantly represented, particularly in Europe. 
+
+
+
+
+
+
+```{r include=FALSE}
+# Rename education
+education_level_joint <- survey_responses %>%
+  mutate(ed_level = factor(ed_level, levels = 1:8, labels = c(
+    "Associate degree",
+    "Bachelor’s degree",
+    "Master’s degree",
+    "Primary/elementary school",
+    "Professional degree",
+    "High School",
+    "Some college",
+    "Something else"
+  )))
+
+# Create updated education levels to a new dataframe
+survey_responses2 <-education_level_joint
+
+
+# Rename job roles
+dev_roles_joint <- survey_responses2 %>%
+  mutate(dev_type = factor(dev_type, levels = 1:34, labels = c(
+    "Academic researcher",
+    "Blockchain",
+    "Cloud infrastructure engineer",
+    "Data engineer",
+    "Data or business analyst",
+    "Data scientist or machine learning specialist",
+    "Database administrator",
+    "Designer",
+    "Developer Advocate",
+    "Developer Experience",
+    "Developer, AI",
+    "Developer, back-end",
+    "Developer, desktop or enterprise applications",
+    "Developer, embedded applications or devices",
+    "Developer, front-end",
+    "Developer, full-stack",
+    "Developer, game or graphics",
+    "Developer, mobile",
+    "Developer, QA or test",
+    "DevOps specialist",
+    "Educator",
+    "Engineer, site reliability",
+    "Engineering manager",
+    "Hardware Engineer",
+    "Marketing or sales professional",
+    "Other",
+    "Product manager",
+    "Project manager",
+    "Research & Development role",
+    "Scientist",
+    "Security professional",
+    "Senior Executive (C-Suite, VP, etc.)",
+    "Student",
+    "System administrator"
+  )))
+
+# Updating the dataframe with renamed developer roles
+survey_responses2 <- dev_roles_joint
+
+# Set the threshold
+threshold <- 150
+
+# Calculate median income by education level and job role
+med_income_by_role_edu <- survey_responses2 %>%
+  filter(country == "United States of America") %>% # Filter for US data only
+  filter(!is.na(dev_type)) %>% # Remove missing developer roles
+  group_by(dev_type) %>% # Group by developer role to calculate count
+  mutate(count = n()) %>% # Add a count column for each dev_type
+  ungroup() %>% # Ungroup to perform further calculations
+  mutate(dev_type = if_else(count < threshold, "Other", as.character(dev_type))) %>% # Group less common roles as "Other"
+  filter(comp_total <= quantile(comp_total, 0.99, na.rm = TRUE)) %>%  # Exclude top 1% of extreme salaries (outliers)
+  group_by(ed_level, dev_type) %>% # Group by education level and developer role
+  summarise(med_income = median(comp_total, na.rm = TRUE), # Calculate median income
+            .groups = 'drop') %>% # Drop grouping after summarising
+  arrange(desc(med_income)) # Arrange from highest to lowest median income
+
+med_income_by_role_edu
+
+# Group less common job roles into "Other"
+grouped_med_income_by_role_edu <- med_income_by_role_edu %>%
+  filter(!is.na(dev_type)) %>%
+  mutate(dev_type = if_else(med_income < threshold, "Other", as.character(dev_type))) %>%
+  group_by(ed_level, dev_type) %>%
+  summarise(med_income = median(med_income, na.rm = TRUE), .groups = 'drop') %>%
+  arrange(desc(med_income))
+
+# Plot median income by education level and job role
+ggplot(grouped_med_income_by_role_edu, aes(x = reorder(dev_type, med_income), y = med_income, fill = ed_level)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_fill_brewer(palette = "Set3") +
+  labs(title = "Median Income by Education Level and Job Role (USA)",
+       x = "Job Role",
+       y = "Median Income",
+       fill = "Education Level") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        plot.title = element_text(size = 14, face = "bold"),
+        legend.position = "bottom")
+
+
+
+```
+
+
+```{r include=FALSE}
+#### Test with coord_polar
+
+# Plot number of respondents by country
+ggplot(continent_counts, aes(x = reorder(Continent, -count), y = count, fill = Continent)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_polar( theta = 'y' , start=0) +
+  geom_text(aes(label = count), position = position_stack(vjust = 0.5), size = 2) + 
+
+  labs(title = "Number of Respondents by Continent",
+       x = "Continent",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 12, margin = margin(r = 10)),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) 
+```
