@@ -1,0 +1,1132 @@
+---
+title: "Tidy Tuesday"
+subtitle: "Week 37"
+author: "Cristian T"
+date: last-modified
+format: 
+   html:
+     df-print: paged
+     embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+
+```
+
+This week we are exploring Economic Diversity and Student Outcomes!
+
+College students are back on campus in the US, so we're exploring
+economic diversity and student outcomes! The dataset this week comes
+from Opportunity Insights via an article and associated interactive
+visualization from the Upshot at the New York Times.
+
+"A new study, based on millions of anonymous tax records, shows that
+some colleges are even more economically segregated than previously
+understood, while others are associated with income mobility."
+
+This dataset offers an opportunity to explore the three rules that make
+a dataset "tidy":
+
+-   Each variable is a column; each column is a variable.
+-   Each observation is a row; each row is an observation.
+-   Each value is a cell; each cell is a single value.
+
+\`college_admissions.csv
+
+
++-------------+-------------+------------------------------------------+
+| variable    | class       | description                              |
++=============+=============+==========================================+
+| super_opeid | double      | Institution OPEID / Cluster ID when      |
+|             |             | combining multiple OPEIDs.               |
++-------------+-------------+------------------------------------------+
+| name        | character   | Name of college (or college group).      |
++-------------+-------------+------------------------------------------+
+| par         | double      | Parent household income group based on   |
+| _income_bin |             | percentile in the income distribution.   |
++-------------+-------------+------------------------------------------+
+| par         | character   | Parent household income label.           |
+| _income_lab |             |                                          |
++-------------+-------------+------------------------------------------+
+| attend      | double      | Test-score-reweighted absolute           |
+|             |             | attendance rate: Calculated as the       |
+|             |             | fraction of students attending that      |
+|             |             | college among all test-takers within a   |
+|             |             | parent income bin in the Pipeline        |
+|             |             | Analysis Sample.                         |
++-------------+-------------+------------------------------------------+
+| st          | double      | Standard error on the attend variable.   |
+| derr_attend |             |                                          |
++-------------+-------------+------------------------------------------+
+| a           | double      | The school average estimates reweighting |
+| ttend_level |             | on test score. Divide the                |
+|             |             | test-score-reweighted absolute variables |
+|             |             | by this average to calculate the         |
+|             |             | test-score-reweighted relative           |
+|             |             | variables.                               |
++-------------+-------------+------------------------------------------+
+| attend_sat  | double      | Absolute attendance rate for specific    |
+|             |             | test score band based on school          |
+|             |             | tier/category.                           |
++-------------+-------------+------------------------------------------+
+| stderr      | double      | Standard error on the attend_sat         |
+| _attend_sat |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| atten       | double      | The school average estimates reweighting |
+| d_level_sat |             | on test score. Divide the                |
+|             |             | test-score-reweighted absolute variables |
+|             |             | by this average to calculate the         |
+|             |             | test-score-reweighted relative           |
+|             |             | variables.                               |
++-------------+-------------+------------------------------------------+
+| rel_apply   | double      | Test-score-reweighted relative           |
+|             |             | application rate: Calculated using       |
+|             |             | adjusted score-sending rates, the        |
+|             |             | relative fraction of all standardized    |
+|             |             | test takers who send test scores to a    |
+|             |             | given college.                           |
++-------------+-------------+------------------------------------------+
+| stder       | double      | Standard error on the rel_apply          |
+| r_rel_apply |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| rel_attend  | double      | Test-score-reweighted relative           |
+|             |             | attendance rate: Calculated as the       |
+|             |             | fraction of students attending that      |
+|             |             | college among all test-takers within a   |
+|             |             | parent income bin in the Pipeline        |
+|             |             | Analysis Sample. Relative attendance     |
+|             |             | rates are reported as a proportion of    |
+|             |             | the mean attendance rate across all      |
+|             |             | parent income bins for each college.     |
++-------------+-------------+------------------------------------------+
+| stderr      | double      | Standard error on the rel_attend         |
+| _rel_attend |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| rel_a       | double      | Calculated as the ratio of rel_attend to |
+| tt_cond_app |             | rel_apply.                               |
++-------------+-------------+------------------------------------------+
+| re          | double      | Relative application rate for specific   |
+| l_apply_sat |             | test score band based on school          |
+|             |             | tier/category. Selected test score band  |
+|             |             | is the 50-point band that had the most   |
+|             |             | attendees in each school tier/category.  |
+|             |             | The selected range: Ivy Plus: SAT        |
+|             |             | 1460-1510; Elite Public: SAT 1180-1230;  |
+|             |             | Top Private: SAT 1410-1460; NESCAC: SAT  |
+|             |             | 1370-1420; Tier 2 Private: SAT           |
+|             |             | 1290-1340; Top 100 Private: SAT          |
+|             |             | 1170-1220; Top 100 Public: SAT           |
+|             |             | 1110-1160; Other Flagship: SAT 1070-1120 |
++-------------+-------------+------------------------------------------+
+| stderr_re   | double      | Standard error on the rel_apply_sat      |
+| l_apply_sat |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| rel         | double      | Relative attendance rate for specific    |
+| _attend_sat |             | test score band based on school          |
+|             |             | tier/category.                           |
++-------------+-------------+------------------------------------------+
+| stderr_rel  | double      | Standard error on the rel_attend_sat     |
+| _attend_sat |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| rel_att_c   | double      | Relative attendance rate, conditional on |
+| ond_app_sat |             | application, for specific test score     |
+|             |             | band based on school tier/category       |
++-------------+-------------+------------------------------------------+
+| att         | double      | Test-score-reweighted absolute           |
+| end_instate |             | attendance rate for in-state students.   |
+|             |             | Only available for public schools.       |
++-------------+-------------+------------------------------------------+
+| stderr_att  | double      | Standard error on the attend_instate     |
+| end_instate |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| attend_le   | double      | The school average estimates reweighting |
+| vel_instate |             | on test score. Divide the                |
+|             |             | test-score-reweighted absolute variables |
+|             |             | by this average to calculate the         |
+|             |             | test-score-reweighted relative           |
+|             |             | variables.                               |
++-------------+-------------+------------------------------------------+
+| attend_     | double      | Absolute estimates on a specific test    |
+| instate_sat |             | score for in-state students. Only        |
+|             |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| std         | double      | Standard error on the attend_instate_sat |
+| err_attend_ |             | variable.                                |
+| instate_sat |             |                                          |
++-------------+-------------+------------------------------------------+
+| at          | double      | Absolute estimates on a specific test    |
+| tend_level_ |             | score for in-state students. Only        |
+| instate_sat |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| att         | double      | Test-score-reweighted absolute           |
+| end_oostate |             | attendance rate for out-of-state         |
+|             |             | students. Only available for public      |
+|             |             | schools.                                 |
++-------------+-------------+------------------------------------------+
+| stderr_att  | double      | Standard error on the attend_oostate     |
+| end_oostate |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| attend_le   | double      | The school average estimates reweighting |
+| vel_oostate |             | on test score. Divide the                |
+|             |             | test-score-reweighted absolute variables |
+|             |             | by this average to calculate the         |
+|             |             | test-score-reweighted relative           |
+|             |             | variables.                               |
++-------------+-------------+------------------------------------------+
+| attend_     | double      | Absolute estimates on a specific test    |
+| oostate_sat |             | score for out-of-state students. Only    |
+|             |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| std         | double      | Standard error on the attend_oostate_sat |
+| err_attend_ |             | variable.                                |
+| oostate_sat |             |                                          |
++-------------+-------------+------------------------------------------+
+| at          | double      | Absolute estimates on a specific test    |
+| tend_level_ |             | score for out-of-state students. Only    |
+| oostate_sat |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| rel_ap      | double      | Test-score-reweighted relative           |
+| ply_instate |             | application rate for in-state students.  |
+|             |             | In-state status is measured using the    |
+|             |             | students’ address when they take a       |
+|             |             | standardized test. Only available for    |
+|             |             | public schools.                          |
++-------------+-------------+------------------------------------------+
+| st          | double      | Standard error on the rel_apply_instate  |
+| derr_rel_ap |             | variable.                                |
+| ply_instate |             |                                          |
++-------------+-------------+------------------------------------------+
+| rel_att     | double      | Test-score-reweighted relative           |
+| end_instate |             | attendance rate for in-state students.   |
+|             |             | Only available for public schools.       |
++-------------+-------------+------------------------------------------+
+| std         | double      | Standard error on the rel_attend_instate |
+| err_rel_att |             | variable.                                |
+| end_instate |             |                                          |
++-------------+-------------+------------------------------------------+
+| re          | double      | Test-score-reweighted relative           |
+| l_att_cond_ |             | attendance rate, conditional on          |
+| app_instate |             | application, for in-state students. Only |
+|             |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| rel_ap      | double      | Test-score-reweighted relative           |
+| ply_oostate |             | application rate for out-of-state        |
+|             |             | students. In-state status is measured    |
+|             |             | using the students’ address when they    |
+|             |             | take a standardized test. Only available |
+|             |             | for public schools.                      |
++-------------+-------------+------------------------------------------+
+| st          | double      | Standard error on the rel_apply_oostate  |
+| derr_rel_ap |             | variable.                                |
+| ply_oostate |             |                                          |
++-------------+-------------+------------------------------------------+
+| rel_att     | double      | Test-score-reweighted relative           |
+| end_oostate |             | attendance rate for out-of-state         |
+|             |             | students. Only available for public      |
+|             |             | schools.                                 |
++-------------+-------------+------------------------------------------+
+| std         | double      | Standard error on the rel_attend_oostate |
+| err_rel_att |             | variable.                                |
+| end_oostate |             |                                          |
++-------------+-------------+------------------------------------------+
+| re          | double      | Test-score-reweighted relative           |
+| l_att_cond_ |             | attendance rate, conditional on          |
+| app_oostate |             | application, for out-of-state students.  |
+|             |             | Only available for public schools.       |
++-------------+-------------+------------------------------------------+
+| rel_apply_  | double      | Relative estimates on a specific test    |
+| instate_sat |             | score for in-state students. Only        |
+|             |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| stderr      | double      | Standard error on the                    |
+| _rel_apply_ |             | rel_apply_instate_sat variable.          |
+| instate_sat |             |                                          |
++-------------+-------------+------------------------------------------+
+| rel_attend_ | double      | Relative estimates on a specific test    |
+| instate_sat |             | score for in-state students. Only        |
+|             |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| stderr_     | double      | Standard error on the                    |
+| rel_attend_ |             | rel_attend_instate_sat variable.         |
+| instate_sat |             |                                          |
++-------------+-------------+------------------------------------------+
+| rel_at      | double      | Estimates on a specific test score for   |
+| t_cond_app_ |             | in-state students. Only available for    |
+| instate_sat |             | public schools.                          |
++-------------+-------------+------------------------------------------+
+| rel_apply_  | double      | Relative estimates on a specific test    |
+| oostate_sat |             | score for out-of-state students. Only    |
+|             |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| stderr      | double      | Standard error on the                    |
+| _rel_apply_ |             | rel_apply_oostate_sat variable.          |
+| oostate_sat |             |                                          |
++-------------+-------------+------------------------------------------+
+| rel_attend_ | double      | Relative estimates on a specific test    |
+| oostate_sat |             | score for out-of-state students. Only    |
+|             |             | available for public schools.            |
++-------------+-------------+------------------------------------------+
+| stderr_     | double      | Standard error on the                    |
+| rel_attend_ |             | rel_attend_oostate_sat variable.         |
+| oostate_sat |             |                                          |
++-------------+-------------+------------------------------------------+
+| rel_at      | double      | Estimates on a specific test score for   |
+| t_cond_app_ |             | out-of-state students. Only available    |
+| oostate_sat |             | for public schools.                      |
++-------------+-------------+------------------------------------------+
+| a           | double      | Unweighted absolute attendance rate:     |
+| ttend_unwgt |             | Calculated as the fraction of students   |
+|             |             | attending that college among all         |
+|             |             | test-takers within a parent income bin   |
+|             |             | in the Pipeline Analysis Sample.         |
++-------------+-------------+------------------------------------------+
+| stderr_a    | double      | Standard error on the attend_unwgt       |
+| ttend_unwgt |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| attend_     | double      | The unweighted school average estimates. |
+| unwgt_level |             | Divide the unweighted absolute variables |
+|             |             | by this average to calculate the         |
+|             |             | unweighted relative variables.           |
++-------------+-------------+------------------------------------------+
+| attend_un   | double      | Unweighted absolute estimates for        |
+| wgt_instate |             | instate students. Only available for     |
+|             |             | public schools.                          |
++-------------+-------------+------------------------------------------+
+| stder       | double      | Standard error on the                    |
+| r_attend_un |             | attend_unwgt_instate variable.           |
+| wgt_instate |             |                                          |
++-------------+-------------+------------------------------------------+
+| attend_un   | double      | Unweighted absolute estimates for        |
+| wgt_oostate |             | out-of-state students. Only available    |
+|             |             | for public schools.                      |
++-------------+-------------+------------------------------------------+
+| stder       | double      | Standard error on the                    |
+| r_attend_un |             | attend_unwgt_oostate variable.           |
+| wgt_oostate |             |                                          |
++-------------+-------------+------------------------------------------+
+| atte        | double      | The unweighted school average estimates. |
+| nd_unwgt_le |             | Divide the unweighted absolute variables |
+| vel_instate |             | by this average to calculate the         |
+|             |             | unweighted relative variables.           |
++-------------+-------------+------------------------------------------+
+| atte        | double      | The unweighted school average estimates. |
+| nd_unwgt_le |             | Divide the unweighted absolute variables |
+| vel_oostate |             | by this average to calculate the         |
+|             |             | unweighted relative variables.           |
++-------------+-------------+------------------------------------------+
+| rel_a       | double      | Unweighted relative attendance rate:     |
+| ttend_unwgt |             | Calculated as the fraction of students   |
+|             |             | attending that college among all         |
+|             |             | test-takers within a parent income bin   |
+|             |             | in the Pipeline Analysis Sample.         |
+|             |             | Relative attendance rates are reported   |
+|             |             | as a proportion of the mean attendance   |
+|             |             | rate across all parent income bins for   |
+|             |             | each college.                            |
++-------------+-------------+------------------------------------------+
+| rel_        | double      | Unweighted relative application rate:    |
+| apply_unwgt |             | Calculated using adjusted score-sending  |
+|             |             | rates, the relative fraction of all      |
+|             |             | standardized test takers who send test   |
+|             |             | scores to a given college.               |
++-------------+-------------+------------------------------------------+
+| s           | double      | Standard error on the rel_attend_unwgt   |
+| tderr_rel_a |             | variable.                                |
+| ttend_unwgt |             |                                          |
++-------------+-------------+------------------------------------------+
+| stderr_rel_ | double      | Standard error on the rel_apply_unwgt    |
+| apply_unwgt |             | variable.                                |
++-------------+-------------+------------------------------------------+
+| rel_att_con | double      | Calculated as the ratio of               |
+| d_app_unwgt |             | rel_attend_unwgt to rel_apply_unwgt.     |
++-------------+-------------+------------------------------------------+
+| re          | double      | Unweighted relative estimates for        |
+| l_attend_un |             | instate students. Only available for     |
+| wgt_instate |             | public schools.                          |
++-------------+-------------+------------------------------------------+
+| re          | double      | Unweighted relative estimates for        |
+| l_attend_un |             | out-of-state students. Only available    |
+| wgt_oostate |             | for public schools.                      |
++-------------+-------------+------------------------------------------+
+| stderr_re   | double      | Standard error on the                    |
+| l_attend_un |             | rel_attend_unwgt_instate variable.       |
+| wgt_instate |             |                                          |
++-------------+-------------+------------------------------------------+
+| stderr_re   | double      | Standard error on the                    |
+| l_attend_un |             | rel_attend_unwgt_oostate variable.       |
+| wgt_oostate |             |                                          |
++-------------+-------------+------------------------------------------+
+| r           | double      | Unweighted relative estimates for        |
+| el_apply_un |             | instate students. Only available for     |
+| wgt_instate |             | public schools.                          |
++-------------+-------------+------------------------------------------+
+| r           | double      | Unweighted relative estimates for        |
+| el_apply_un |             | out-of-state students. Only available    |
+| wgt_oostate |             | for public schools.                      |
++-------------+-------------+------------------------------------------+
+| stderr_r    | double      | Standard error on the                    |
+| el_apply_un |             | rel_apply_unwgt_instate variable.        |
+| wgt_instate |             |                                          |
++-------------+-------------+------------------------------------------+
+| stderr_r    | double      | Standard error on the                    |
+| el_apply_un |             | rel_apply_unwgt_oostate variable.        |
+| wgt_oostate |             |                                          |
++-------------+-------------+------------------------------------------+
+| rel_att_    | double      | Unweighted estimates for instate         |
+| cond_app_un |             | students. Only available for public      |
+| wgt_instate |             | schools.                                 |
++-------------+-------------+------------------------------------------+
+| rel_att_    | double      | Unweighted estimates for out-of-state    |
+| cond_app_un |             | students. Only available for public      |
+| wgt_oostate |             | schools.                                 |
++-------------+-------------+------------------------------------------+
+| public      | logical     | Indicator for public universities.       |
++-------------+-------------+------------------------------------------+
+| flagship    | logical     | Indicator for public flagship            |
+|             |             | universities (defined using the College  |
+|             |             | Board Annual Survey of Colleges, 2016).  |
++-------------+-------------+------------------------------------------+
+| tier        | character   | Selectivity and type combination:        |
+|             |             | Ivy-Plus (Ivy League colleges plus       |
+|             |             | Stanford, Chicago, Duke, and MIT); Other |
+|             |             | elite college (Barron’s top selectivity  |
+|             |             | category, other than the Ivy-plus, both  |
+|             |             | public and private combined); Highly     |
+|             |             | selective public college (Barron’s 2nd   |
+|             |             | selectivity group); Highly selective     |
+|             |             | private college (Barron’s 2nd            |
+|             |             | selectivity group); Selective public     |
+|             |             | college (Barron’s 3rd, 4th, and 5th      |
+|             |             | selectivity groups); Selective private   |
+|             |             | college (Barron’s 3rd, 4th, and 5th      |
+|             |             | selectivity groups) See Chetty,          |
+|             |             | Friedman, Saez, Turner, and Yagan (2020) |
+|             |             | for more information on how the tier is  |
+|             |             | defined.                                 |
++-------------+-------------+------------------------------------------+
+| tes         | character   | School group for the test-score band     |
+| t_band_tier |             | statistics.                              |
++-------------+-------------+------------------------------------------+
+
+# Load the data
+```{r}
+# Load the tidytuesday package
+suppressMessages(library(tidytuesdayR)) # For accessing TidyTuesday datasets
+suppressMessages(library(skimr)) # For summary and descriptive statistics
+suppressMessages(library(tidyverse)) # For data manipulation and visualization
+suppressMessages(library(dplyr)) # For data manipulation and transformation
+suppressMessages(library(ggplot2)) # For data visualization
+suppressMessages(library(RColorBrewer)) # For color palettes in visualizations
+suppressMessages(library(ggimage) ) # For adding images to plots
+
+
+# Load the current week's dataset
+tuesdata <- tidytuesdayR::tt_load('2024-09-10')
+
+# Extract datasets from the TidyTuesday dataset
+college_admissions <- tuesdata$college_admissions
+
+# Rename datasets 
+ca <- college_admissions
+
+
+# Explore the structure of the dataset
+str(ca) # Display the structure of 'college_admissions'
+skim(ca) # Provide detailed summary statistics for 'college_admissions' (missing values, summary stats)
+
+
+# Export data
+#write.csv(college_admissions, "college_admissions.csv", row.names = FALSE)
+
+
+
+#tidytuesdayR::use_tidytemplate()
+```
+
+
+
+```{r}
+
+#### Clean the data
+
+# 42 columns have a significant number of missing values (over 1300).
+```
+
+
+#### EDA
+```{r}
+
+# Summarize college_admissions
+summary(college_admissions)
+
+# Create a boxplot parent income vs attendance
+boxplot(attend ~ par_income_bin, data=ca, main="Attendance by Income Bin", xlab="Income Bin", ylab="Attendance Rate")
+
+# Create a bar plot institutions by their tier
+barplot(table(ca$tier), main="Number of Institutions by Tier")
+
+# Create a scatterplot parent income v attendance
+plot(ca$par_income_bin, ca$attend, main="Parent Income vs Attendance Rate", xlab="Parent Income Bin", ylab="Attendance Rate")
+
+# Create a boxplot in-state vs out-of-state attendance
+boxplot(ca$attend_instate, ca$attend_oostate, names=c("In-State", "Out-of-State"), main="Attendance Rates: In-State vs Out-of-State", ylab="Attendance Rate")
+   
+# Create a scatterplot SAT attendance vs overall attendance rates
+plot(ca$attend_sat, ca$attend, main="Test Scores vs Attendance Rate", xlab="Test Score Band Attendance Rate", ylab="Attendance Rate")
+
+# Filter higher-income
+attend_by_income_bin <- ca %>%
+  filter(par_income_bin > 80) %>% 
+  select(name, par_income_bin, attend, tier) %>% # par_income_lab
+  group_by(par_income_bin)
+attend_by_income_bin
+
+# Summarize higher-income by mean, median, and standard deviation
+summary_stats <- ca %>%
+  group_by(par_income_bin) %>%
+  summarize(
+    mean_attend = mean(attend, na.rm = TRUE),
+    median_attend = median(attend, na.rm = TRUE),
+    sd_attend = sd(attend, na.rm = TRUE)
+  )
+summary_stats
+#  As income increases, both the mean and median attendance rates rise, suggesting that students from wealthier households are more likely to attend college. The standard deviation decreases slightly for middle-income groups and then increases again for higher-income bins. The standard deviation for low and middle-income bins (10 to 85) is relatively low and stable, suggesting that attendance rates in these income groups are relatively similar and clustered around the mean.
+
+# Filter data for lower income bins (e.g., income <= 50)
+# low_income_data <- ca %>% 
+#   filter(par_income_bin <= 30)
+
+# Group by school and calculate number of students from lower-income bins attending each school
+# schools_for_poor_kids <- low_income_data %>%
+#   group_by(name) %>%
+#   summarise(weighted_attendance_rate = sum(attend, na.rm = TRUE)) %>%
+#   arrange(desc(weighted_attendance_rate))
+# schools_for_poor_kids
+
+# Filter data for upper income bins (e.g., income >= 92.5)
+# rich_income_data <- ca %>% 
+#   filter(par_income_bin <= 99.5)
+
+# Group by school and calculate number of students from lower-income bins attending each school
+# schools_for_rich_kids <- rich_income_data %>%
+#   group_by(name) %>%
+#   summarise(weighted_attendance_rate = sum(attend, na.rm = TRUE)) %>%
+#   arrange(desc(weighted_attendance_rate))
+# schools_for_rich_kids
+
+
+# unique(ca$name)
+
+# ND_attend_by_income_bin <- ca %>%
+#   filter(name == "University Of Notre Dame") %>%
+#   select(par_income_bin, attend, tier) %>%
+#   group_by(par_income_bin)
+
+# attend_by_income_bin <- ca %>%
+#   filter(name == "American University") %>%
+#   select(par_income_bin, attend, tier) %>%
+#   group_by(par_income_bin)
+
+# NM_attend_by_income_bin <- ca %>%
+  # filter(name == "University Of New Mexico") %>%
+  # select(par_income_bin, attend, tier) %>%
+  # group_by(par_income_bin)
+# NM_attend_by_income_bin
+
+
+```
+
+
+#### Plot 1 Comparison of Attendance Rates by Income Group
+
+```{r}
+
+# Filter data for lower income bins income <= 30
+low_income_data <- ca %>% 
+  filter(par_income_bin <= 30)
+
+# Group by school and calculate number of students from lower-income bins attending each school
+schools_for_poor_kids <- low_income_data %>%
+  group_by(name) %>% # Group data by school name
+  summarise(weighted_attendance_rate = sum(attend, na.rm = TRUE)) %>% # Summarize attendance by summing up the number of students
+  arrange(desc(weighted_attendance_rate)) # Arrange schools in descending order of attendance rate
+schools_for_poor_kids
+
+
+# Filter data for upper income bins income >= 92.5
+super_rich_income_data <- ca %>% 
+  filter(par_income_bin <= 99.5)
+
+# Group by school and calculate number of students from lower-income bins attending each school
+schools_for_super_rich_kids <- super_rich_income_data %>%
+  group_by(name) %>% # Group data by school name
+  summarise(weighted_attendance_rate = sum(attend, na.rm = TRUE)) %>% # Summarize attendance by summing up the number of students
+  arrange(desc(weighted_attendance_rate)) # Arrange schools in descending order of attendance rate
+schools_for_super_rich_kids
+
+# Combine the two datasets: schools_for_poor_kids and schools_for_super_rich_kids
+attendance_combined <- schools_for_poor_kids %>%
+  rename(lower_income_attendance = weighted_attendance_rate) %>%  # Rename column for clarity
+  left_join(schools_for_super_rich_kids %>%
+              rename(upper_income_attendance = weighted_attendance_rate), # Rename column
+            by = "name") # Merge data frames by school name
+
+# Calculate the gap between upper and lower-income attendance rates
+attendance_combined <- attendance_combined %>%
+  mutate(gap = upper_income_attendance - lower_income_attendance) # Calculate the gap between upper and lower-income attendance
+
+# Sort by the largest gap
+attendance_combined <- attendance_combined %>%
+  arrange(desc(gap)) # Arrange schools in descending order of the gap
+attendance_combined
+
+# Filter the top 15 universities by gap
+attendance_combined_top <- attendance_combined %>%
+  top_n(15, wt = gap) %>% # Select the top 15 schools with the largest gaps
+  mutate(lower_income_attendance_percent = lower_income_attendance * 100,
+         upper_income_attendance_percent = upper_income_attendance * 100) %>% 
+  arrange(desc(gap)) # Arrange by gap
+
+# Get images for graph by creating a dataframe with university names and logo URLs
+logos <- data.frame(
+  name = c("Harvard University", "Yale University", "University Of Michigan - Ann Arbor", 
+           "University Of California, Berkeley", "Princeton University", "University Of Pennsylvania", 
+           "Stanford University", "Massachusetts Institute Of Technology", 
+           "Cornell University", "University Of Chicago", "Northwestern University", 
+           "Columbia University In The City Of New York", "University Of Texas At Austin", 
+           "Washington University In St. Louis", "University Of Notre Dame"),
+  logo_url2 = c("/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Harvard_University.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Yale_University.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Michigan.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_California,_Berkeley.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Princeton_logo.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Pennsylvania.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Stanford_logo.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/MIT.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Cornell_University.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Chicago.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Northwestern_University.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Columbia_University.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Texas.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Washington_University_in_St._Louis.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Notre_Dame.png")
+)
+
+# Combine the attendance data with the logos
+attendance_combined_top <- attendance_combined_top %>%
+  left_join(logos, by = "name") # Join the logos dataframe with the attendance data
+
+# Create a Dumbbell Chart for the top 15 universities
+ggplot(attendance_combined_top, aes(x = lower_income_attendance_percent, 
+                                    xend = upper_income_attendance_percent, 
+                                    y = reorder(name, gap))) +
+  geom_segment(aes(x = lower_income_attendance_percent, xend = upper_income_attendance_percent, 
+                   y = reorder(name, gap), yend = reorder(name, gap)),
+               color = "gray", size = 1.0) + # Line connecting the points
+  geom_point(aes(x = lower_income_attendance_percent), 
+             color = brewer.pal(3, "Set2")[1], size = 4) + # Lower-income point
+  geom_point(aes(x = upper_income_attendance_percent), 
+             color = brewer.pal(3, "Set2")[2], size = 4) + # Upper-income point
+  geom_text(aes(x = lower_income_attendance_percent, 
+                label = paste0(round(lower_income_attendance_percent, 1), "%")), hjust = 1.5, size = 3.5) + # Lower-income label
+  geom_text(aes(x = upper_income_attendance_percent, label = paste0(round(upper_income_attendance_percent, 1), "%")), hjust = -0.2, size = 3.5) + # Upper-income label
+  geom_text(aes(label = paste0(round(gap * 100, 1), "%"), x = (lower_income_attendance_percent + upper_income_attendance_percent) / 2), color = "black", vjust = -1.5, size = 3.5) + # Adding the gap label, rounded to 2 decimals
+  geom_image(aes(x = -1.5, y = reorder(name, gap), image = logo_url2), size = 0.13, by = "width") + # Adding logos
+  labs(title = "Comparison of Attendance Rates by Income Group",
+       subtitle = "Lower-Income vs. Upper-Income Students",
+       x = "Attendance Rate (%)", 
+       y = NULL) + # Remove the y-axis title
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), # Remove x-axis text
+        axis.text.y = element_blank(), # Remove y-axis text
+        axis.title.x = element_blank(),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+```
+We see that the gap between upper-income and lower-income student attendance rates varies across the top 15 universities. The data shows a significant economic divide in attendance rates at prestigious universities like Harvard, Yale, and Princeton, which have the largest gaps, showing a significant difference in attendance rates between upper-income and lower-income students. The larger the gap, the greater the disparity in attendance rates between upper-income and lower-income students. This disparity indicates that while these universities are accessible to students from various economic backgrounds, students from higher-income households are more likely to attend. 
+
+
+#### Plot 2 Mean Attendance Gap by Institution Tier
+Compare the attendance gaps with similar institutions to understand whether certain universities are outliers or if similar patterns exist across peers.
+
+```{r}
+# Merge CA dataset with attendance_combined on 'name'
+merged_ca <- merge(attendance_combined, ca, by = "name", all.x = TRUE)
+
+# Filter schools from previous plot
+my_15 <- merged_ca %>% 
+  filter(name %in% c("Harvard University", "Yale University", "University Of Michigan - Ann Arbor", "University Of California, Berkeley", "Princeton University", "University Of Pennsylvania", "Stanford University", "Massachusetts Institute Of Technology", "Cornell University", "University Of Chicago", "Northwestern University", "Columbia University In The City Of New York", "University Of Texas At Austin", "Washington University In St. Louis", "University Of Notre Dame")) %>% 
+  select(name, tier, lower_income_attendance, upper_income_attendance, gap)
+unique(my_15)
+
+# Summary statistics of the 'gap' variable, grouped by school tier
+tier_summary <- merged_ca %>%
+  group_by(tier) %>% # Group data by 'tier'
+  summarise(
+    min_gap = min(gap, na.rm = TRUE), # Minimum gap
+    mean_gap = mean(gap, na.rm = TRUE), # Mean gap
+    median_gap = median(gap, na.rm = TRUE), # Median gap
+    sd_gap = sd(gap, na.rm = TRUE), # SD gap
+    max_gap = max(gap, na.rm = TRUE)) # Max gap
+tier_summary
+
+# Box plot of gap by tier
+# ggplot(merged_ca, aes(x = tier, y = gap)) +
+#   geom_boxplot() +
+#   labs(x = "Selectivity Tier", y = "Attendance Gap") +
+#   coord_flip()
+
+# Scatter plot of lower vs. upper income attendance by tier
+# ggplot(merged_ca, aes(x = lower_income_attendance, y = upper_income_attendance, color = tier)) +
+#   geom_point() +
+#   labs(x = "Lower Income Attendance", y = "Upper Income Attendance", color = "Selectivity Tier")
+
+
+# Create the bar plot mean attendance gap by tier
+ggplot(tier_summary, aes(x = tier, y = mean_gap)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_errorbar(aes(ymin = mean_gap - sd_gap, ymax = mean_gap + sd_gap), width = 0.2) + # Add error bars showing variability
+  labs(title = "Mean Attendance Gap by Institution Tier",
+       subtitle = "Exploring the average gap and its variability\n\nIvy Plus schools display the largest disparity between upper-income and lower-income students.\nHighly Selective Public universities have the second-largest gap, with considerable variation in equity.",
+
+       x = NULL,
+       y = "Mean Gap") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  coord_flip()
+
+
+
+# Selective Public Institutions show relatively small gaps with some variability in equity.
+
+# Selective Private show relatively small gaps, with some schools showing very equitable attendance rates. In contrast, others have much larger gaps based on the error bar.
+
+# Other Elite Schools (Public and Private): These schools display moderate gaps with higher variability in income-based attendance equity.
+
+# Ivy Plus Institutions: These institutions display the largest disparity between upper-income and lower-income students.
+
+# Highly Selective Public Institutions: These universities have the second-largest gap, but the high standard deviation displays considerable variation in equity among these schools.
+
+# Highly Selective Private Institutions: These institutions show a more balanced distribution of students from different income backgrounds with lower variability.
+
+
+
+```
+
+"Ivy Plus" schools, such as Harvard, Yale, Cornell, Columbia, Princeton, Stanford, University of Chicago, University of Pennsylvania, and MIT, display the largest disparity in attendance between upper- and lower-income students, with a mean gap of 0.147. This gap is significantly larger than that of other institution types, and the maximum gap of 0.228 further highlights the unequal access to these prestigious schools. Even the most equitable "Ivy Plus" schools show a minimum gap of 0.0945, indicating that income disparity remains an issue even at the best-performing schools in this category.
+
+
+"Highly selective public" universities like the University of California, Berkeley, the University of Michigan, and the University of Texas at Austin exhibit the second-largest gap in attendance rates between income groups, with a mean gap of 0.0734. Although this disparity is smaller than that seen at "Ivy Plus" institutions, the relatively high standard deviation of 0.0442 points to significant variation in equity among these schools, with some being much more accessible to lower-income students than others.
+
+In contrast, "highly selective private" institutions like Gonzaga, Syracuse, Baylor, and TCU show a much smaller mean gap of 0.0323, suggesting a more balanced distribution of students from different income backgrounds. The low variability within this category, with a standard deviation of just 0.0180, further indicates that these schools tend to be more consistent in their access.
+
+"Selective private" (BYU, Howard, and Loyola Marymount) and "selective public" schools (Auburn, Florida State, and Alabama), with mean gaps of 0.0366 and 0.0409, respectively, reveal only slightly higher disparities than "highly selective private" schools. These institutions exhibit relatively small gaps, and their low minimum gaps suggest that some schools in these categories are very equitable in attendance for lower-income students.
+
+"Other elite schools" like Notre Dame, Washington University, and Northwestern University display a moderate mean gap of 0.0389, higher than "highly selective private schools" but still relatively small. However, the higher standard deviation of 0.0319 indicates greater variability in income-based attendance equity within this category.
+
+
+Overall, lower-income students remain vastly underrepresented across all types of institutions. For instance, "Ivy Plus" schools have an average lower-income attendance rate of only 0.0252, while "highly selective public" institutions show an even lower rate of 0.0124. Conversely, upper-income students are overrepresented, with mean attendance rates of 0.172 at "Ivy Plus" schools and 0.0858 at "highly selective public" schools.
+
+
+
+
+#### Plot 3 Application vs. Attendance Rates
+
+```{r}
+
+# Define lower-income and upper-income groups
+lower_income_bins <- c(0, 10, 20, 30)
+upper_income_bins <- c(80, 90, 95, 96, 97, 98, 99, 99.9, 100)
+
+# rel_apply: How many students with similar test scores apply to a college compared to other colleges.
+# rel_attend: How many students with similar test scores attend a college compared to other colleges.
+# rel_apply_instate: How many in-state students apply to a public college compared to other public colleges.
+# rel_attend_instate: How many in-state students attend a public college compared to other public colleges.
+# rel_apply_oostate: How many out-of-state students apply to a public college compared to other public colleges.
+# rel_attend_oostate: How many out-of-state students attend a public college compared to other public colleges.
+
+# Calculate mean application and attendance rates for lower-income students
+lower_income_analysis <- merged_ca %>%
+  filter(par_income_bin <= 30) %>% # Filter data for lower-incom
+  summarize(
+    mean_rel_apply = mean(rel_apply, na.rm = TRUE),
+    mean_rel_attend = mean(rel_attend, na.rm = TRUE),
+    mean_rel_apply_instate = mean(rel_apply_instate, na.rm = TRUE),
+    mean_rel_attend_instate = mean(rel_attend_instate, na.rm = TRUE),
+    mean_rel_apply_oostate = mean(rel_apply_oostate, na.rm = TRUE),
+    mean_rel_attend_oostate = mean(rel_attend_oostate, na.rm = TRUE)
+  )
+
+# Calculate mean application and attendance rates for upper-income students
+upper_income_analysis <- merged_ca %>%
+  filter(par_income_bin >= 80) %>% # Filter data for upper-income
+  summarize(
+    mean_rel_apply = mean(rel_apply, na.rm = TRUE),
+    mean_rel_attend = mean(rel_attend, na.rm = TRUE),
+    mean_rel_apply_instate = mean(rel_apply_instate, na.rm = TRUE),
+    mean_rel_attend_instate = mean(rel_attend_instate, na.rm = TRUE),
+    mean_rel_apply_oostate = mean(rel_apply_oostate, na.rm = TRUE),
+    mean_rel_attend_oostate = mean(rel_attend_oostate, na.rm = TRUE)
+  )
+
+# Combine the results
+comparison <- bind_rows(
+  lower_income_analysis %>% mutate(income_group = "Lower-Income"),
+  upper_income_analysis %>% mutate(income_group = "Upper-Income")
+) %>% 
+  select(income_group, everything()) # Reorganize columns
+comparison
+
+# Create a DataFrame with the summary data
+data <- data.frame(
+  Income_Group = rep(c("Lower-Income", "Upper-Income"), each = 6),
+  Category = rep(c("Overall Apply", "Overall Attend", "In-State Apply", "In-State Attend", "Out-of-State Apply", "Out-of-State Attend"), 2),
+  Rate = c(0.8936, 0.8171, 0.9436, 0.9315, 0.6955, 0.6189,
+           1.3499, 1.5278, 1.0588, 1.0939, 1.5214, 1.7540))
+
+# Plot the data
+ggplot(data, aes(x = Category, y = Rate, fill = Income_Group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+    geom_text(aes(label = round(Rate, 4)), position = position_dodge(width = 0.9), 
+      vjust = 0.5, hjust = 1.1) +
+  scale_fill_manual(values = brewer.pal(10, "Set2")) +
+  labs(title = "Application vs. Attendance Rates",
+       subtitle = "Lower-Income and Upper-Income Students",
+       x = NULL,
+       fill = "Income Group") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),  # Remove x-axis text
+        #axis.text.y = element_blank(), # Remove y-axis text
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  coord_flip()
+
+
+
+# The comparison
+# Overall Mean Application Rate: 0.8936
+# Overall Mean Application Rate: 1.3499
+
+# Overall Mean Attendance Rate: 0.8171
+# Overall Mean Attendance Rate: 1.5278
+
+# In-State Mean Application Rate: 0.9436
+# In-State Mean Application Rate: 1.0588
+
+# In-State Mean Attendance Rate: 0.9315
+# In-State Mean Attendance Rate: 1.0939
+
+# Out-of-State Mean Application Rate: 0.6955
+# Out-of-State Mean Application Rate: 1.5214
+
+# Out-of-State Mean Attendance Rate: 0.6189
+# Out-of-State Mean Attendance Rate: 1.7540
+
+
+
+
+
+
+
+
+```
+The overall mean application rate for lower-income students is 0.8936, while their mean attendance rate is 0.8171. This indicates a noticeable drop-off between application and attendance, particularly evident for out-of-state institutions. Specifically, the application rate for out-of-state colleges is 0.6955, which is higher than the attendance rate of 0.6189. This suggests that lower-income students face significant challenges in following through with attendance, possibly due to financial constraints or logistical difficulties. In contrast, the application rate for in-state colleges is slightly higher at 0.9436, with an attendance rate of 0.9315. While most in-state applicants attend, there is still a small gap between application and attendance, highlighting that barriers remain for lower-income students even with better access.
+
+The overall mean application rate for upper-income students is 1.3499, and their mean attendance rate is even higher at 1.5278. This substantial difference shows that upper-income students are more likely to both apply and attend the colleges they apply to. The data reveals a strong follow-through on applications, with higher attendance rates than application rates. When focusing on in-state colleges, the application rate is 1.0588, which is lower than the attendance rate of 1.0939, indicating a high likelihood of attending once they apply. For out-of-state colleges, the application rate is 1.5214, with an attendance rate of 1.7540. Compared to the application rate, this substantial attendance rate suggests that upper-income students who apply to out-of-state colleges are very likely to attend. This indicates a strong follow-through and fewer barriers for upper-income students, reflecting their greater resources and access to educational opportunities.
+
+
+
+
+```{r include=FALSE}
+#### Plot 4 Top 3 Countries by Job Role
+# Rename job roles
+# dev_roles <- survey_responses %>%
+#   mutate(dev_type = factor(dev_type, levels = 1:34, labels = c(
+#     "Academic researcher",
+#     "Blockchain",
+#     "Cloud infrastructure engineer",
+#     "Data engineer",
+#     "Data or business analyst",
+#     "Data scientist or machine learning specialist",
+#     "Database administrator",
+#     "Designer",
+#     "Developer Advocate",
+#     "Developer Experience",
+#     "Developer, AI",
+#     "Developer, back-end",
+#     "Developer, desktop or enterprise applications",
+#     "Developer, embedded applications or devices",
+#     "Developer, front-end",
+#     "Developer, full-stack",
+#     "Developer, game or graphics",
+#     "Developer, mobile",
+#     "Developer, QA or test",
+#     "DevOps specialist",
+#     "Educator",
+#     "Engineer, site reliability",
+#     "Engineering manager",
+#     "Hardware Engineer",
+#     "Marketing or sales professional",
+#     "Other",
+#     "Product manager",
+#     "Project manager",
+#     "Research & Development role",
+#     "Scientist",
+#     "Security professional",
+#     "Senior Executive (C-Suite, VP, etc.)",
+#     "Student",
+#     "System administrator"
+#   )))
+# 
+# # Filter for top 2 continents, including United States and count respondents by job role
+# continent_age_counts_dev <- dev_roles %>%
+#   filter(Continent %in% c("North America", "Europe", "Asia")) %>% 
+#   mutate(region = case_when(
+#     Continent == "North America" ~ "United States of America",
+#     Continent == "Europe" ~ "Europe",
+#     Continent == "Asia" ~ "Asia"
+#   )) %>%
+#   group_by(region, dev_type) %>%
+#   summarise(count = n(), .groups = 'drop') %>% 
+#   mutate(percentage = (count / sum(count)) * 100)
+# 
+# # Group less common job roles into "Other"
+# threshold <- 150  # Threshold for grouping
+# grouped_data <- continent_age_counts_dev %>%
+#   filter(!is.na(dev_type)) %>%
+#   mutate(dev_type = if_else(count < threshold, "Other", as.character(dev_type))) %>%
+#   group_by(region, dev_type) %>%
+#   summarise(count = sum(count), .groups = 'drop') %>% 
+#   mutate(percentage = (count / sum(count)) * 100)
+# 
+# 
+# # Create the plot
+# ggplot(grouped_data, aes(x = dev_type, y = count, fill = region)) +
+#   geom_bar(stat = "identity", position = "stack") +  # Change to "stack" for stacked bars
+#   geom_text(aes(label = count), position = position_stack(vjust = 0.5), size = 2) +  # Adjust text position for stacking
+#   scale_fill_manual(values = brewer.pal(10, "Set3")) +
+#   labs(title = "Respondents by Job Role and Region",
+#        x = "Job Role",
+#        y = "Count",
+#        fill = "Region") +
+#   theme_minimal() +
+#   theme(axis.text.x = element_blank(), 
+#         axis.title.x = element_blank(),
+#         axis.title.y = element_text(size = 12),
+#         plot.title = element_text(size = 14, face = "bold"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         legend.position = c(0.85, 0.85)) +
+#   coord_flip()  # Flip coordinates for better label readability
+
+
+```
+
+```{r include=FALSE}
+############# Graphs with Names ############# 
+ggplot(attendance_combined_top, aes(x = lower_income_attendance_percent, 
+                                    xend = upper_income_attendance_percent, 
+                                    y = reorder(name, gap))) +
+  geom_segment(aes(x = lower_income_attendance_percent, xend = upper_income_attendance_percent, 
+                   y = reorder(name, gap), yend = reorder(name, gap)),
+               color = "gray", size = 1.0) + # Line connecting the points
+  geom_point(aes(x = lower_income_attendance_percent), 
+             color = brewer.pal(3, "Set2")[1], size = 4) + # Lower-income point
+  geom_point(aes(x = upper_income_attendance_percent), 
+             color = brewer.pal(3, "Set2")[2], size = 4) + # Upper-income point
+  geom_text(aes(x = lower_income_attendance_percent, 
+                label = paste0(round(lower_income_attendance_percent, 1), "%")), hjust = 1.5, size = 3.5) + # Lower-income label
+  geom_text(aes(x = upper_income_attendance_percent, label = paste0(round(upper_income_attendance_percent, 1), "%")), hjust = -0.2, size = 3.5) + # Upper-income label
+  geom_text(aes(label = paste0(round(gap * 100, 1), "%"), x = (lower_income_attendance_percent + upper_income_attendance_percent) / 2), color = "black", vjust = -1.5, size = 3.5) + # Adding the gap label, rounded to 2 decimals
+  geom_image(aes(image = logo_url, y = reorder(name, gap)), x = -0.05, size = 0.05, by = "height") + # Adding logos
+  labs(title = "Comparison of Attendance Rates by Income Group",
+       subtitle = "Lower-Income vs. Upper-Income Students at Selective Universities",
+       x = "Attendance Rate (%)", 
+       y = "University") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+```
+
+```{r include=FALSE}
+#### Test with coord_polar
+
+# Plot number of respondents by country
+ggplot(continent_counts, aes(x = reorder(Continent, -count), y = count, fill = Continent)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_polar( theta = 'y' , start=0) +
+  geom_text(aes(label = count), position = position_stack(vjust = 0.5), size = 2) + 
+
+  labs(title = "Number of Respondents by Continent",
+       x = "Continent",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 12, margin = margin(r = 10)),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) 
+```
+
+```{r include=FALSE}
+#{r include=FALSE}
+# Filter data for lower income bins income <= 30
+low_income_data <- ca %>% 
+  filter(par_income_bin <= 30)
+
+# Group by school and calculate the number of students from lower-income bins attending each school
+schools_for_poor_kids <- low_income_data %>%
+  group_by(name) %>% # Group data by school name
+  summarise(lower_income_attendance = sum(attend_unwgt, na.rm = TRUE)) %>% # Summarize attendance by summing up the number of students
+  arrange(desc(lower_income_attendance)) # Arrange schools in descending order of attendance rate
+
+# Filter data for upper income bins income >= 92.5
+rich_income_data <- ca %>% 
+  filter(par_income_bin >= 92.5)
+
+# Group by school and calculate the number of students from upper-income bins attending each school
+schools_for_super_rich_kids <- rich_income_data %>%
+  group_by(name) %>% # Group data by school name
+  summarise(upper_income_attendance = sum(attend_unwgt, na.rm = TRUE)) %>% # Summarize attendance by summing up the number of students
+  arrange(desc(upper_income_attendance)) # Arrange schools in descending order of attendance rate
+
+# Combine the two datasets: schools_for_poor_kids and schools_for_super_rich_kids
+attendance_combined <- schools_for_poor_kids %>%
+  left_join(schools_for_super_rich_kids, by = "name") %>% # Merge data frames by school name
+  mutate(gap = upper_income_attendance - lower_income_attendance) # Calculate the gap between upper and lower-income attendance
+
+# Sort by the largest gap
+attendance_combined <- attendance_combined %>%
+  arrange(desc(gap)) # Arrange schools in descending order of the gap
+
+# Filter the top 15 universities by gap
+attendance_combined_top <- attendance_combined %>%
+  top_n(15, wt = gap) %>% # Select the top 15 schools with the largest gaps
+  mutate(lower_income_attendance_percent = lower_income_attendance * 100,
+         upper_income_attendance_percent = upper_income_attendance * 100) %>% 
+  arrange(desc(gap)) # Arrange by gap
+
+# Get images for graph by creating a dataframe with university names and logo URLs
+logos <- data.frame(
+  name = c("Harvard University", "Yale University", "University Of Michigan - Ann Arbor", 
+           "University Of California, Berkeley", "Princeton University", "University Of Pennsylvania", 
+           "Stanford University", "Massachusetts Institute Of Technology", 
+           "Cornell University", "University Of Chicago", "Northwestern University", 
+           "Columbia University In The City Of New York", "University Of Texas At Austin", 
+           "Washington University In St. Louis", "University Of Notre Dame"),
+  logo_url = c("/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Harvard_Crimson.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Yale_Bulldogs.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Michigan.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_Of_California_Berkeley.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Princeton.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Penn.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Stanford.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/MIT.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Cornell.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Chicago.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Northwestern.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Columbia.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Texas_Longhorns.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/WashU.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Notre_Dame.png")
+)
+
+# Combine the attendance data with the logos
+attendance_combined_top <- attendance_combined_top %>%
+  left_join(logos, by = "name") # Join the logos dataframe with the attendance data
+
+# Create a Dumbbell Chart for the top 15 universities
+ggplot(attendance_combined_top, aes(x = lower_income_attendance_percent, 
+                                    xend = upper_income_attendance_percent, 
+                                    y = reorder(name, gap))) +
+  geom_segment(aes(x = lower_income_attendance_percent, xend = upper_income_attendance_percent, 
+                   y = reorder(name, gap), yend = reorder(name, gap)),
+               color = "gray", size = 1.0) + # Line connecting the points
+  geom_point(aes(x = lower_income_attendance_percent), 
+             color = brewer.pal(3, "Set2")[1], size = 4) + # Lower-income point
+  geom_point(aes(x = upper_income_attendance_percent), 
+             color = brewer.pal(3, "Set2")[2], size = 4) + # Upper-income point
+  geom_text(aes(x = lower_income_attendance_percent, 
+                label = paste0(round(lower_income_attendance_percent, 1), "%")), hjust = 1.5, size = 3.5) + # Lower-income label
+  geom_text(aes(x = upper_income_attendance_percent, label = paste0(round(upper_income_attendance_percent, 1), "%")), hjust = -0.2, size = 3.5) + # Upper-income label
+  geom_text(aes(label = paste0(round(gap * 100, 1), "%"), x = (lower_income_attendance_percent + upper_income_attendance_percent) / 2), color = "black", vjust = -1.5, size = 3.5) + # Adding the gap label, rounded to 1 decimal
+  geom_image(aes(x = -1.8, y = reorder(name, gap), image = logo_url), size = 0.05, by = "height") + # Adding logos
+  labs(title = "Comparison of Attendance Rates by Income Group",
+       subtitle = "Lower-Income vs. Upper-Income Students",
+       x = "Attendance Rate (%)", 
+       y = NULL) + # Remove the y-axis title
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), # Remove x-axis text
+        axis.text.y = element_blank(), # Remove y-axis text
+        axis.title.x = element_blank(),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+```
+
+```{r include=FALSE}
+highly_selective_private <- merged_ca %>% 
+  filter(tier == "Highly selective private")
+unique(highly_selective_private$name)
+
+elite_schools <- merged_ca %>% 
+  filter(tier == "Other elite schools (public and private)")
+unique(elite_schools$name)
+
+selective_public <- merged_ca %>% 
+  filter(tier == "Selective public")
+unique(selective_public$name)
+
+Highly_selective_public <- merged_ca %>% 
+  filter(tier == "Highly selective public")
+unique(Highly_selective_public$name)
+
+selective_private <- merged_ca %>% 
+  filter(tier == "Selective private")
+unique(selective_private$name)
+
+
+
+unique(merged_ca$tier)
+
+unique(merged_ca$test_band_tier)
+```
+
+```{r include=FALSE}
+  
+
+logo_url = c("/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Harvard_Crimson.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Yale_Bulldogs.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Michigan.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_Of_California_Berkeley.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Princeton.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Penn.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Stanford.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/MIT.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Cornell.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Chicago.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Northwestern.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Columbia.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Texas_Longhorns.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/WashU.png", 
+               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Notre_Dame.png")
+```
+
