@@ -603,7 +603,7 @@ logos <- data.frame(
   logo_url2 = c("/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Harvard_University.png", 
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Yale_University.png", 
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Michigan.png", 
-               "/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_California,_Berkeley.png", 
+               "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Berkeley.png", 
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Princeton_logo.png", 
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Pennsylvania.png", 
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Stanford_logo.png", 
@@ -613,7 +613,7 @@ logos <- data.frame(
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Northwestern_University.png", 
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Columbia_University.png", 
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Texas.png", 
-               "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Washington_University_in_St._Louis.png", 
+               "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/Washington_UniversityFcristian.png", 
                "/Tidy Tuesday/2024-09-10 Economic Diversity and Student Outcomes/University_of_Notre_Dame.png")
 )
 
