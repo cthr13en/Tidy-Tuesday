@@ -1,0 +1,483 @@
+---
+title: "Tidy Tuesday"
+subtitle: "Week 39"
+author: "Cristian T"
+date: last-modified
+format: 
+   html:
+     df-print: paged
+     embed-resources: true
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+
+```
+
+This week we are exploring the International Mathematical Olympiad
+(IMO)!
+
+The International Mathematical Olympiad (IMO) is the World Championship
+Mathematics Competition for High School students and is held annually in
+a different country. The first IMO was held in 1959 in Romania, with 7
+countries participating. It has gradually expanded to over 100 countries
+from 5 continents. The competition consists of 6 problems and is held
+over two consecutive days with 3 problems each.
+
+`country_results_df.csv`
+
+| variable                  | class     | description                   |
+|---------------------------|-----------|-------------------------------|
+| year                      | integer   | Year of IMO                   |
+| country                   | character | Participating country         |
+| team_size_all             | integer   | Participating contestants     |
+| team_size_male            | integer   | Male contestants              |
+| team_size_female          | integer   | Female contestants            |
+| p1                        | integer   | Score on problem 1            |
+| p2                        | integer   | Score on problem 2            |
+| p3                        | integer   | Score on problem 3            |
+| p4                        | integer   | Score on problem 4            |
+| p5                        | integer   | Score on problem 5            |
+| p6                        | integer   | Score on problem 6            |
+| p7                        | integer   | Score on problem 7            |
+| awards_gold               | integer   | Number of gold medals         |
+| awards_silver             | integer   | Number of silver medals       |
+| awards_bronze             | integer   | Number of bronze medals       |
+| awards_honorable_mentions | integer   | Number of honorable mentions  |
+| leader                    | character | Leader of country team        |
+| deputy_leader             | character | Deputy leader of country team |
+
+`timeline_df.csv`
+
+| variable        | class     | description                 |
+|-----------------|-----------|-----------------------------|
+| year            | integer   | Year of IMO                 |
+| contestant      | character | Participant's name          |
+| country         | character | Participant's country       |
+| p1              | integer   | Score on problem 1          |
+| p2              | integer   | Score on problem 2          |
+| p3              | integer   | Score on problem 3          |
+| p4              | integer   | Score on problem 4          |
+| p5              | integer   | Score on problem 5          |
+| p6              | integer   | Score on problem 6          |
+| total           | integer   | Total score on all problems |
+| individual_rank | integer   | Individual rank             |
+| award           | character | Award won                   |
+
+`timeline_df.csv`
+
+| variable          | class     | description                                          |
+|-------------------|-----------|------------------------------------------------------|
+| edition           | integer   | Edition of International Mathematical Olympiad (IMO) |
+| year              | integer   | Year of IMO                                          |
+| country           | character | Host country                                         |
+| city              | character | Host city                                            |
+| countries         | integer   | Number of participating countries                    |
+| all_contestant    | integer   | Number of participating contestants                  |
+| male_contestant   | integer   | Number of participating male contestants             |
+| female_contestant | integer   | Number of participating female contestants           |
+| start_date        | Date      | Start date of IMO                                    |
+| end_date          | Date      | End date of IMO                                      |
+
+# Load the data
+
+```{r}
+# Load the tidytuesday package
+suppressMessages(library(tidytuesdayR)) # For accessing TidyTuesday datasets
+suppressMessages(library(skimr)) # For summary and descriptive statistics
+suppressMessages(library(tidyverse)) # For data manipulation and visualization
+suppressMessages(library(dplyr)) # For data manipulation and transformation
+suppressMessages(library(ggplot2)) # For data visualization
+suppressMessages(library(RColorBrewer)) # For color palettes in visualizations
+suppressMessages(library(ggimage)) # For adding images to plots
+suppressMessages(library(tidytext)) 
+suppressMessages(library(sentimentr))
+suppressMessages(library(ggpubr))
+
+
+# Load the current week's dataset
+tuesdata <- tidytuesdayR::tt_load('2024-09-24')
+
+# Extract datasets from the TidyTuesday dataset
+country_results <- tuesdata$country_results_df
+individual_results <- tuesdata$individual_results_df
+timeline <- tuesdata$timeline_df
+
+# Rename datasets 
+#ca <- college_admissions
+
+
+# Explore the structure of the dataset
+str(country_results) # Display the structure of 'hamlet'
+str(individual_results) # Display the structure of 'macbeth'
+str(timeline) # Display the structure of 'romeo_juliet'
+skim(country_results) # Provide detailed summary statistics for 'hamlet' (missing values, summary stats)
+skim(individual_results) # Provide detailed summary statistics for 'hamlet' (missing values, summary stats)
+skim(timeline) # Provide detailed summary statistics for 'hamlet' (missing values, summary stats)
+
+
+# Export data
+# write.csv(country_results, "country_results.csv", row.names = FALSE)
+# write.csv(individual_results, "individual_results.csv", row.names = FALSE)
+# write.csv(timeline, "timeline.csv", row.names = FALSE)
+
+
+
+#write.csv(combined_plays, "combined_plays.csv", row.names = FALSE)
+
+#tidytuesdayR::use_tidytemplate()
+
+# country_results <- country_results %>%
+#   left_join(standardized_countries, by = "country")
+
+
+
+```
+##### Standarized Countries
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(countrycode)
+
+# Create a new data frame with standardized country names
+standardized_countries <- data.frame(
+  country = unique(country_results$country),
+  standardized_country = countrycode(unique(country_results$country), "country.name", "country.name"),
+  stringsAsFactors = FALSE
+)
+
+# View the new standardized countries data frame
+standardized_countries
+
+# Merge the new data frame with the original country_results
+country_results <- country_results %>%
+  left_join(standardized_countries, by = "country")
+
+# View the updated country_results
+country_results
+```
+
+##### country_results2
+```{r}
+# Create a copy of country_results
+country_results2 <- country_results
+
+
+# Create new columns for total males and females
+country_results2 <- country_results2 %>%
+  mutate(total_males = team_size_male,total_females = team_size_all - team_size_male) %>%
+  mutate(female_proportion = total_females / team_size_all) %>%
+    mutate(has_female = ifelse(total_females > 0, 1, 0))
+
+country_results2 %>%
+  select(year, standardized_country, team_size_all, team_size_male, team_size_female, total_males, total_females, female_proportion)
+```
+
+
+##### Merged GII Data 2022
+The Gender Inequality Index (GII) is a composite measure that reflects inequalities in gender-based outcomes across three key dimensions: reproductive health, empowerment, and labor market participation.
+```{r include=FALSE}
+# Load the gii data
+gii_data <- read.csv("/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-24 International Mathematical Olympiad/Gender Inequality Index.csv")
+```
+
+```{r}
+
+
+# Create a copy of country_results
+country_results_gii <- country_results
+
+
+# Merge the datasets on the 'country' column
+country_results_gii <- country_results_gii %>%
+  left_join(gii_data, c("standardized_country" = "country"))
+
+
+country_results_filtered <- country_results_gii %>%
+  select(year, country, standardized_country, hdi.rank, value, rank) 
+
+na <- country_results_filtered %>%
+  filter(is.na(rank)) %>%
+  group_by(country,standardized_country ) %>%  # Group by the country column
+  summarise(
+    count = n(),  # Count of rows with NA rank for each country
+    .groups = 'drop'  # Optionally, drop the grouping after summarizing
+  )
+na
+
+# Create new columns for total males and females
+country_results_gii <- country_results_gii %>%
+  filter(year == 2022) %>% 
+  mutate(total_males = team_size_male,total_females = team_size_all - team_size_male) %>%
+  mutate(female_proportion = total_females / team_size_all) %>%
+    mutate(has_female = ifelse(total_females > 0, 1, 0))
+
+country_results_gii %>%
+  select(year, standardized_country, team_size_all, team_size_male, team_size_female, total_males, total_females, female_proportion)
+
+```
+
+##### Merge GDI Data 1990 - 2022
+The Gender Development Index (GDI)
+```{r include=FALSE}
+gdi_data <- read.csv("/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-24 International Mathematical Olympiad/gender-development-index.csv")
+```
+
+```{r}
+
+
+# Create a copy of country_results
+country_results_gdi <- country_results
+
+# Merge the datasets on the 'country' column
+country_results_gdi <- country_results %>%
+  left_join(gdi_data, by = c("standardized_country" = "country", "year" = "year"))
+
+# Remove rows with NA
+country_results_gdi <- country_results_gdi %>%
+  drop_na(gender.development.index)
+
+country_results_filtered <- country_results_gdi %>%
+  select(year, country, standardized_country, year, gender.development.index) 
+
+# Create new columns for total males and females
+country_results_gdi <- country_results_gdi %>%
+  mutate(total_males = team_size_male,total_females = team_size_all - team_size_male) %>%
+  mutate(female_proportion = total_females / team_size_all) %>%
+    mutate(has_female = ifelse(total_females > 0, 1, 0))
+
+country_results_gdi %>%
+  select(year, standardized_country, team_size_all, team_size_male, team_size_female, total_males, total_females, female_proportion)
+```
+
+
+
+
+
+
+
+
+
+```{r}
+
+#### Clean the data
+
+# Missing values are associated with line numbers and stage direction
+
+
+```
+
+#### EDA
+
+```{r}
+
+# Trend of total scores over the years
+ggplot(individual_results, aes(x = year, y = total)) +
+    geom_line(stat = "summary", fun = mean) +
+    labs(title = "Average Total Scores Over the Years",
+         x = "Year",
+         y = "Average Total Score") +
+    theme_minimal()
+
+medal_distribution <- country_results %>%
+    group_by(country) %>%
+    summarize(total_gold = sum(awards_gold, na.rm = TRUE)) %>%
+    arrange(desc(total_gold))
+
+# Medal distribution by country
+ggplot(country_results, aes(x = reorder(country, -awards_gold), y = awards_gold)) +
+    geom_bar(stat = "identity") +
+    labs(title = "Gold Medals by Country",
+         x = "Country",
+         y = "Gold Medals") +
+    coord_flip() +
+    theme_minimal()
+
+#unique(country_results$country)
+
+```
+
+
+
+
+#### Plot 1 Female Participation Over Time
+
+```{r}
+
+
+############ female participation over time by year
+
+# Aggregate data by year
+yearly_female_participation <- country_results2 %>%
+  group_by(year) %>%
+  summarize(
+    total_females = sum(total_females, na.rm = TRUE),
+    total_team_size = sum(team_size_all, na.rm = TRUE)
+  ) %>%
+  mutate(female_proportion = total_females / total_team_size)
+
+# View the summary
+yearly_female_participation %>% arrange(desc(female_proportion))
+
+ggplot(yearly_female_participation, aes(x = year, y = female_proportion)) +
+  geom_line(color = "blue") +
+  labs(title = "Female Participation Over Time",
+       x = "Year",
+       y = "Female Proportion") +
+  theme_minimal()
+
+# country_results %>% filter(year == 1961)
+
+
+
+
+
+```
+
+#### Plot 2 Total Female Participation and Awards Counts by Country (1959 - 2024) with Over 10% Female Participation
+```{r}
+############ female participation by country
+country_female_participation2 <- country_results2 %>%
+  group_by(country) %>%
+  summarize(
+    total_females = sum(total_females, na.rm = TRUE),
+    total_team_size = sum(team_size_all, na.rm = TRUE),
+    total_awards_gold = sum(awards_gold, na.rm = TRUE),
+    total_awards_silver = sum(awards_silver, na.rm = TRUE),
+    total_awards_bronze = sum(awards_bronze, na.rm = TRUE),
+    total_awards_honorable_mentions = sum(awards_honorable_mentions, na.rm = TRUE)
+  ) %>%
+  mutate(female_proportion = total_females / total_team_size) 
+
+# United States shows female participation 0.01923077
+
+# Filter for > 10% female participation
+country_female_participation2_filtered <- country_female_participation2 %>%
+  filter(female_proportion > 0.1)    
+
+# Create a new variable to represent the total awards
+country_female_participation2_filtered <- country_female_participation2_filtered %>%
+  mutate(total_awards = total_awards_gold + total_awards_silver + total_awards_bronze + total_awards_honorable_mentions)
+
+
+# Create the plot 
+ggplot(country_female_participation2_filtered, aes(x = fct_rev(country), y = total_females, fill = female_proportion)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Total Female Participation and Awards Counts by Country (1959 - 2024) with Over 10% Female Participation",
+       x = "Country",
+       y = "Total Females") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue", name = "Female Participation") +
+  geom_text(aes(label = total_awards), 
+  position = position_dodge(width = 0.9), hjust = -0.1, color = "black", size = 3) +
+  theme_minimal() +
+theme(
+    axis.title.x = element_blank(), 
+    plot.title = element_text(size = 14, face = "bold"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()) 
+
+
+country_female_participation2_filtered
+
+filt2 <- country_female_participation2_filtered %>%
+  select(country, total_females, female_proportion, total_awards) 
+filt2
+```
+
+
+
+
+
+#### Plot Countries with high GDI ranks but low female_proportion
+
+The Gender Development Index (GDI) measures gender equality in human development by comparing the Human Development Index (HDI) values of women and men. Here’s a breakdown of how the GDI is interpreted based on the values you've provided:
+ 
+Interpreting GDI Values:
+
+GDI < 1: Indicates that men have a higher HDI than women, suggesting a gender gap in human development favoring men. This situation implies that women may have less access to resources, opportunities, or well-being.
+GDI = 1: Indicates perfect gender equality, where women and men have the same HDI.
+GDI > 1: Indicates that women have a higher HDI than men, suggesting a gender gap in human development favoring women. This situation might reflect conditions where women experience better access to education, health care, and economic opportunities compared to men.
+https://ourworldindata.org/human-development-index#the-gender-development-index-gdi
+```{r}
+
+# Create GDI categories
+country_results_gdi <- country_results_gdi %>%
+  mutate(gdi_category = case_when(
+    gender.development.index < 1 ~ "GDI < 1: Gender Gap Favoring Men",
+    gender.development.index == 1 ~ "GDI = 1: Perfect Gender Equality",
+    gender.development.index > 1 ~ "GDI > 1: Gender Gap Favoring Women"
+  ))
+
+# Map countries to developing regions
+
+# Create a column for "region" 
+country_results_gdi <- country_results_gdi %>%
+  mutate(region = case_when(
+    standardized_country %in% c("Algeria", "Bahrain", "Egypt", "Iraq", "Jordan", "Kuwait", "Lebanon", "Libya", "Morocco", "State of Palestine", "Oman", "Qatar", "Saudi Arabia", "Somalia", "Sudan", "Syria", "Tunisia", "United Arab Emirates", "Yemen") ~ "Arab States",
+    standardized_country %in% c("Brunei", "Cambodia", "China", "Fiji", "Indonesia", "Democratic People’s Republic of Korea", "Laos", "Malaysia", "Mongolia", "Myanmar", "Nauru", "Papua New Guinea", "Philippines", "Singapore", "Thailand", "Timor-Leste", "Vietnam") ~ "East Asia and the Pacific",
+    standardized_country %in% c("Albania", "Armenia", "Azerbaijan", "Belarus", "Bosnia and Herzegovina", "Georgia", "Kazakhstan", "Kyrgyzstan", "Moldova", "Montenegro", "North Macedonia", "Serbia", "Turkey", "Turkmenistan", "Ukraine", "Uzbekistan", "Croatia", "Latvia", "Lithuania", "Slovakia", "Slovenia", "Austria", "Bulgaria", "Cyprus", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Israel", "Italy", "Japan", "Netherlands", "Norway", "Poland", "Portugal", "Romania", "South Korea", "Spain", "United Kingdom", "Switzerland", "Sweden", "Luxembourg", "Belgium", "Denmark", "Estonia", "Czechia", "Croatia", "Latvia", "Lithuania", "Slovakia", "Slovenia", "Russia", "Tajikistan", "Liechtenstein") ~ "Europe and Central Asia",
+    standardized_country %in% c("Antigua and Barbuda", "Argentina", "Bahamas", "Barbados", "Belize", "Bolivia", "Brazil", "Chile", "Colombia", "Costa Rica", "Cuba", "Dominican Republic", "Ecuador", "El Salvador", "Guatemala", "Honduras", "Jamaica", "Mexico", "Nicaragua", "Panama", "Paraguay", "Peru", "Uruguay", "Venezuela") ~ "Latin America and the Caribbean",
+    standardized_country %in% c("Afghanistan", "Bangladesh", "Bhutan", "India", "Iran", "Maldives", "Nepal", "Pakistan", "Sri Lanka") ~ "South Asia",
+    standardized_country %in% c("Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cameroon", "Central African Republic", "Chad", "Congo", "Democratic Republic of the Congo", "Côte d’Ivoire", "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Senegal", "Seychelles", "Sierra Leone", "South Africa", "South Sudan", "Tanzania", "Togo", "Uganda", "Zambia", "Zimbabwe") ~ "Sub-Saharan Africa",
+    standardized_country %in% c("Australia", "New Zealand") ~ "Oceania",
+    standardized_country %in% c("United States", "Canada") ~ "North America",
+    TRUE ~ "Other"  # Default if the country doesn't match any group
+  ))
+
+# View the dataframe with the new region column
+head(country_results_gdi)
+
+
+```
+
+```{r}
+
+
+ggplot(country_results_gdi, aes(x = gender.development.index)) +
+  geom_histogram(binwidth = 0.01, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of Gender Development Index (GDI)",
+       x = "GDI", y = "Count of Countries")
+
+gender_proportion_yearly_summary <- country_results_gdi %>%
+  group_by(year, standardized_country, gdi_category, region) %>%
+  summarise(
+    median_female_proportion = median(female_proportion, na.rm = TRUE),
+    .groups = 'drop'  # Ungroup the data after summarization
+  )
+# Plot the mean female proportion over the years by GDI category
+ggplot(gender_proportion_yearly_summary, aes(x = year, y = median_female_proportion, color = gdi_category, group = gdi_category)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Median Female Proportion Over Years by GDI Category",
+       x = "Year",
+       y = "Mean Female Proportion") +
+  theme_minimal() +
+  facet_wrap(~ region)+
+  theme( 
+    plot.title = element_text(size = 14, face = "bold"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()) 
+
+gender_proportion_yearly_summary
+
+other <- gender_proportion_yearly_summary %>% filter(region == "Other")
+other
+```
+
+
+
+
+
+
+
