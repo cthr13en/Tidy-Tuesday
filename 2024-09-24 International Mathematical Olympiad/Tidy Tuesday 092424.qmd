@@ -182,7 +182,7 @@ country_results2 %>%
 The Gender Inequality Index (GII) is a composite measure that reflects inequalities in gender-based outcomes across three key dimensions: reproductive health, empowerment, and labor market participation.
 ```{r include=FALSE}
 # Load the gii data
-gii_data <- read.csv("/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-24 International Mathematical Olympiad/Gender Inequality Index.csv")
+gii_data <- read.csv("/Tidy Tuesday/2024-09-24 International Mathematical Olympiad/Gender Inequality Index.csv")
 ```
 
 ```{r}
@@ -224,7 +224,7 @@ country_results_gii %>%
 ##### Merge GDI Data 1990 - 2022
 The Gender Development Index (GDI)
 ```{r include=FALSE}
-gdi_data <- read.csv("/Users/cristianthirteen/Downloads/Notre Dame/Tidy Tuesday/2024-09-24 International Mathematical Olympiad/gender-development-index.csv")
+gdi_data <- read.csv("/Tidy Tuesday/2024-09-24 International Mathematical Olympiad/gender-development-index.csv")
 ```
 
 ```{r}
